@@ -4,11 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>空間ID試行環境</title>
-
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
-
 <body>
   <main class="container">
     <header class="hero">
@@ -23,10 +21,10 @@
       <section class="panel">
         <div class="panel-head">
           <h2>空間ID計算</h2>
+          <p>各項目を入力して空間IDを計算します。</p>
         </div>
 
         <form id="calc-form" class="form-grid">
-
           <label class="field">
             <span class="field-label">ズームレベル</span>
             <input type="number" id="z" value="15" required />
@@ -58,6 +56,7 @@
       <section class="panel accent-panel">
         <div class="panel-head">
           <h2>空間ID</h2>
+          <p>計算結果として出力される z/f/x/y です。</p>
         </div>
 
         <div class="result-box">
@@ -69,17 +68,19 @@
     <section class="panel">
       <div class="panel-head">
         <h2>地図表示</h2>
+        <p>計算した空間IDの 2D 範囲を地図上に表示します。</p>
       </div>
       <div id="map" class="map"></div>
     </section>
 
+    <!-- 注意書き -->
     <div class="footer-note">
       本画面は空間IDの試行環境として提供しています。予告なく変更・停止する場合があります。表示結果は利用者の責任においてご確認ください。
     </div>
 
   </main>
 
-  <!-- ライブラリ -->
+  <!-- 空間IDライブラリ（UMD） -->
   <script src="./vendor/spatialid/index.js"></script>
 
   <!-- 地図 -->
