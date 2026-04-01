@@ -1,64 +1,98 @@
-
 <!doctype html>
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>空間IDお試し環境</title>
-  <!-- ✅ 正しい CSS リンク -->
+  <title>空間ID試行環境</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <main class="container">
     <header class="header">
-      <h1>空間IDお試し環境</h1>
+      <h1>空間ID試行環境</h1>
       <p class="sub">
-        緯度・経度・ズーム・高さから <strong>z/f/x/y</strong> と <strong>tilehash</strong> を試算します。
+        緯度・経度・ズーム・高さから <strong>z/f/x/y</strong> を試算し、
+        空間IDから中心の緯度・経度・標高も確認できます。
       </p>
     </header>
 
-    <!-- 入力フォーム -->
-    <form id="calc-form" class="stack" novalidate>
-      <label class="field">
-        <span class="label">緯度 (度)</span>
-        <input type="number" id="lat" step="any" placeholder="例: 35.681236" required />
-      </label>
-      <label class="field">
-        <span class="label">経度 (度)</span>
-        <input type="number" id="lng" step="any" placeholder="例: 139.767125" required />
-      </label>
-      <label class="field">
-        <span class="label">ズームレベル</span>
-        <input type="number" id="z" min="0" max="30" step="1" value="25" required />
-      </label>
-      <label class="field">
-        <span class="label">高さ (m)</span>
-        <input type="number" id="h" step="any" value="0" required />
-      </label>
+    <!-- 座標 → 空間ID -->
+    <section class="card">
+      <h2 class="section-title">座標から空間IDを計算</h2>
 
-      <div class="actions">
-        <button type="submit" id="btn" class="btn">計算</button>
-        <button type="button" id="clear" class="btn secondary">クリア</button>
-      </div>
+      <form id="calc-form" class="stack" novalidate>
+        <label class="field">
+          <span class="label">緯度 (度)</span>
+          <input type="number" id="lat" step="any" placeholder="例: 35.681236" required />
+        </label>
+        <label class="field">
+          <span class="label">経度 (度)</span>
+          <input type="number" id="lng" step="any" placeholder="例: 139.767125" required />
+        </label>
+        <label class="field">
+          <span class="label">ズームレベル</span>
+          <input type="number" id="z" min="0" max="30" step="1" value="25" required />
+        </label>
+        <label class="field">
+          <span class="label">高さ (m)</span>
+          <input type="number" id="h" step="any" value="0" required />
+        </label>
 
-      <p id="msg" class="msg" aria-live="polite"></p>
-    </form>
+        <div class="actions">
+          <button type="submit" id="btn" class="btn">計算</button>
+          <button type="button" id="clear" class="btn secondary">クリア</button>
+        </div>
 
-    <!-- 結果（文字を大きく＆z/f/x/y 強調） -->
+        <p id="msg" class="msg" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <!-- 結果 -->
     <section id="result" class="card result-card">
-      <h2 class="section-title">結果</h2>
+      <h2 class="section-title">計算結果</h2>
       <div class="out result-out">
         <div class="out-line result-zfxy-line">
           <strong class="label-strong">z/f/x/y:</strong>
           <code id="zfxy" class="zfxy-accent">-</code>
         </div>
-        <div class="out-line result-id-line">
-          <strong>tilehash:</strong>
-          <code id="tilehash" class="result-code-lg">-</code>
+      </div>
+    </section>
+
+    <!-- 空間ID → 座標 -->
+    <section class="card">
+      <h2 class="section-title">空間IDから座標を確認</h2>
+
+      <form id="reverse-form" class="stack" novalidate>
+        <label class="field">
+          <span class="label">空間ID (z/f/x/y)</span>
+          <input
+            type="text"
+            id="space-id"
+            placeholder="例: 25/22/18827764/14674339"
+            required
+          />
+        </label>
+
+        <div class="actions">
+          <button type="submit" class="btn">変換</button>
+          <button type="button" id="fill-current" class="btn secondary">計算結果を入力</button>
         </div>
-        <div class="out-line result-center-line">
-          <strong>中心 (lng, lat, alt):</strong>
-          <code id="center" class="result-code-md">-</code>
+
+        <p id="reverse-msg" class="msg" aria-live="polite"></p>
+      </form>
+
+      <div class="out result-out">
+        <div class="out-line">
+          <strong>経度 (lng):</strong>
+          <code id="reverse-lng" class="result-code-md">-</code>
+        </div>
+        <div class="out-line">
+          <strong>緯度 (lat):</strong>
+          <code id="reverse-lat" class="result-code-md">-</code>
+        </div>
+        <div class="out-line">
+          <strong>標高 (alt):</strong>
+          <code id="reverse-alt" class="result-code-md">-</code>
         </div>
       </div>
     </section>
@@ -67,12 +101,12 @@
     <section class="card">
       <h2 class="section-title">ズーム操作</h2>
       <div class="actions">
-        <button id="zoom-plus" class="btn">ズームレベル +1</button>
-        <button id="zoom-minus" class="btn">ズームレベル -1</button>
+        <button id="zoom-plus" class="btn" type="button">ズームレベル +1</button>
+        <button id="zoom-minus" class="btn" type="button">ズームレベル -1</button>
       </div>
     </section>
 
-    <!-- 親・子（見出しなし、ズームの直後） -->
+    <!-- 親・子 -->
     <section id="hierarchy" class="card">
       <div class="grid cols-2">
         <div>
@@ -86,16 +120,14 @@
       </div>
     </section>
 
-    <!-- 周辺タイル -->
+    <!-- 周辺 -->
     <section id="around" class="card">
       <h2 class="section-title">周辺タイル</h2>
       <div class="list" id="around-list"><div class="mini">未計算</div></div>
     </section>
   </main>
 
-
-<!-- ✅ 読み込み順：UMD（ライブラリ）→ アプリ -->
-<script src="./vendor/spatialid/index.js"></script>
-<script src="./app.js?v=20251218-01"></script>
-
+  <script src="./vendor/spatialid/index.js"></script>
+  <script src="./app.js?v=20260401-01"></script>
 </body>
+</html>
