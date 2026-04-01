@@ -1,4 +1,3 @@
-
 :root {
   --bg: #ffffff;
   --fg: #1a1a1a;
@@ -14,12 +13,13 @@
 
   --chip-bg: #eef3ff;
 
-  /* 結果強調用 */
   --accent-strong: #0f2dbb;
   --accent-bg: #e7efff;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 body {
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -28,14 +28,34 @@ body {
   margin: 0;
 }
 
-.container { max-width: 960px; margin: 24px auto; padding: 0 16px; }
+.container {
+  max-width: 960px;
+  margin: 24px auto;
+  padding: 0 16px;
+}
 
-.header h1 { margin: 0 0 8px; }
-.header .sub { color: var(--muted); margin: 0 0 16px; }
+.header h1 {
+  margin: 0 0 8px;
+}
 
-.stack { display: grid; gap: 12px; }
+.header .sub {
+  color: var(--muted);
+  margin: 0 0 16px;
+  line-height: 1.6;
+}
 
-.field .label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+.stack {
+  display: grid;
+  gap: 12px;
+}
+
+.field .label {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
 .field input {
   width: 100%;
   padding: 10px 12px;
@@ -44,7 +64,11 @@ body {
   font-size: 14px;
 }
 
-.actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
 
 .btn {
   display: inline-flex;
@@ -60,19 +84,25 @@ body {
   cursor: pointer;
   transition: background 0.15s ease, box-shadow 0.15s ease;
 }
+
 .btn:hover {
   background: var(--btn-bg-hover);
   box-shadow: 0 2px 8px rgba(36, 87, 214, 0.25);
 }
+
 .btn.secondary {
   background: var(--btn-sec-bg);
 }
+
 .btn.secondary:hover {
   background: var(--btn-sec-hover);
   box-shadow: 0 2px 8px rgba(82, 88, 98, 0.25);
 }
 
-.msg { min-height: 20px; color: var(--muted); }
+.msg {
+  min-height: 20px;
+  color: var(--muted);
+}
 
 .card {
   border: 1px solid var(--border);
@@ -82,17 +112,31 @@ body {
   background: #fafbfc;
 }
 
-.out { display: grid; gap: 8px; }
+.out {
+  display: grid;
+  gap: 8px;
+}
+
 .out-line code {
   background: var(--chip-bg);
   padding: 3px 8px;
   border-radius: 8px;
 }
 
-.grid { display: grid; gap: 12px; }
-.grid.cols-2 { grid-template-columns: 1fr 1fr; }
+.grid {
+  display: grid;
+  gap: 12px;
+}
 
-.list { display: grid; gap: 6px; }
+.grid.cols-2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.list {
+  display: grid;
+  gap: 6px;
+}
+
 .list-item {
   display: flex;
   align-items: center;
@@ -104,19 +148,30 @@ body {
   background: #fff;
 }
 
-.mini { font-size: 12px; color: var(--muted); }
-.section-title { margin: 6px 0 10px; font-size: 16px; }
+.mini {
+  font-size: 12px;
+  color: var(--muted);
+}
 
-/* ===== 結果強調（z/f/x/y を目立たせる＆全体の可読性アップ） ===== */
+.section-title {
+  margin: 6px 0 10px;
+  font-size: 16px;
+}
+
 .result-card {
   border-color: #c9d3f8;
   background: #f4f7ff;
 }
-.result-out { gap: 12px; }
 
-.label-strong { font-size: 15px; color: #2a2a2a; }
+.result-out {
+  gap: 12px;
+}
 
-/* z/f/x/y 本体：一番目立たせる */
+.label-strong {
+  font-size: 15px;
+  color: #2a2a2a;
+}
+
 .zfxy-accent {
   display: inline-block;
   font-size: 26px;
@@ -129,9 +184,8 @@ body {
   border: 1px solid #c9d3f8;
 }
 
-/* tilehash：z/f/x/yより一段小さく、でも見やすく */
-.result-code-lg {
-  font-size: 18px;
+.result-code-md {
+  font-size: 16px;
   font-weight: 600;
   color: #1a1a1a;
   background: #ffffff;
@@ -140,18 +194,16 @@ body {
   border: 1px solid #e6e8ee;
 }
 
-/* 中心座標：さらに一段小さく、整った読みやすさ */
-.result-code-md {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1a1a1a;
-  background: #ffffff;
-   padding: 6px 8px;
-  border-radius: 8px;
-  border: 1px solid #e6e8ee;
-}
-
-/* 結果内の code 背景は個別指定に任せる */
 .result-out .out-line code {
   background: transparent;
+}
+
+@media (max-width: 768px) {
+  .grid.cols-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .zfxy-accent {
+    font-size: 22px;
+  }
 }
