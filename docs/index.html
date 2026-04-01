@@ -5,6 +5,14 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>空間ID試行環境</title>
   <link rel="stylesheet" href="style.css" />
+
+  <!-- Leaflet -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
 </head>
 <body>
   <main class="container">
@@ -16,7 +24,6 @@
       </p>
     </header>
 
-    <!-- 座標 → 空間ID -->
     <section class="card">
       <h2 class="section-title">座標から空間IDを計算</h2>
 
@@ -47,7 +54,6 @@
       </form>
     </section>
 
-    <!-- 結果 -->
     <section id="result" class="card result-card">
       <h2 class="section-title">計算結果</h2>
       <div class="out result-out">
@@ -58,7 +64,6 @@
       </div>
     </section>
 
-    <!-- 空間ID → 座標 -->
     <section class="card">
       <h2 class="section-title">空間IDから座標を確認</h2>
 
@@ -97,7 +102,12 @@
       </div>
     </section>
 
-    <!-- ズーム操作 -->
+    <section class="card">
+      <h2 class="section-title">地図表示</h2>
+      <p class="sub map-sub">計算または変換した空間IDの 2D 範囲を地図上に表示します。</p>
+      <div id="map" class="map"></div>
+    </section>
+
     <section class="card">
       <h2 class="section-title">ズーム操作</h2>
       <div class="actions">
@@ -106,7 +116,6 @@
       </div>
     </section>
 
-    <!-- 親・子 -->
     <section id="hierarchy" class="card">
       <div class="grid cols-2">
         <div>
@@ -120,7 +129,6 @@
       </div>
     </section>
 
-    <!-- 周辺 -->
     <section id="around" class="card">
       <h2 class="section-title">周辺タイル</h2>
       <div class="list" id="around-list"><div class="mini">未計算</div></div>
@@ -128,6 +136,11 @@
   </main>
 
   <script src="./vendor/spatialid/index.js"></script>
-  <script src="./app.js?v=20260401-01"></script>
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+  <script src="./app.js?v=20260401-02"></script>
 </body>
 </html>
