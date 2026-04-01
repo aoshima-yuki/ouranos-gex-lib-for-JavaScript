@@ -1,353 +1,83 @@
 (() => {
-  console.log("[app.js] loaded");
-
   function start() {
-    if (!window.SpatialId || !window.SpatialId.Space) {
-      console.error("SpatialId (UMD) が読み込まれていません。index.html の <script src> のパス/順序を確認してください。");
-      var m = document.getElementById("msg");
-      if (m) {
-        m.textContent = "ライブラリが読み込めていません。ページのスクリプト設定をご確認ください。";
-      }
-      return;
-    }
-
-    if (!window.L) {
-      console.error("Leaflet が読み込まれていません。");
-      var m2 = document.getElementById("msg");
-      if (m2) {
-        m2.textContent = "地図ライブラリが読み込めていません。";
-      }
-      return;
-    }
+    const Space = window.SpatialId.Space;
 
     function $(id) {
-      var el = document.getElementById(id);
-      if (!el) throw new Error("Element #" + id + " not found");
-      return el;
+      return document.getElementById(id);
     }
 
-    var formEl = $("calc-form");
-    var reverseFormEl = $("reverse-form");
+    const form = $("calc-form");
+    const reverseForm = $("reverse-form");
 
-    var msgEl = $("msg");
-    var reverseMsgEl = $("reverse-msg");
+    const zfxyEl = $("zfxy");
+    const msgEl = $("msg");
 
-    var zfxyEl = $("zfxy");
-    var clearEl = $("clear");
+    const lngEl = $("reverse-lng");
+    const latEl = $("reverse-lat");
+    const altEl = $("reverse-alt");
 
-    var fillCurrentEl = $("fill-current");
-    var spaceIdInputEl = $("space-id");
-    var reverseLngEl = $("reverse-lng");
-    var reverseLatEl = $("reverse-lat");
-    var reverseAltEl = $("reverse-alt");
+    let currentLayer = null;
+    let currentMarker = null;
 
-    var zoomPlusBtn = document.getElementById("zoom-plus");
-    var zoomMinusBtn = document.getElementById("zoom-minus");
+    // 地図
+    const map = L.map("map").setView([35.68, 139.76], 14);
 
-    var aroundListEl = document.getElementById("around-list");
-    var parentListEl = document.getElementById("parent-list");
-    var childrenListEl = document.getElementById("children-list");
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-    var Space = window.SpatialId.Space;
-    var currentSpace = null;
+    function draw(space) {
+      const geo = space.toGeoJSON();
+      const c = space.center;
 
-    // Leaflet map
-    var map = L.map("map").setView([35.681236, 139.767125], 14);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: "&copy; OpenStreetMap contributors"
-    }).addTo(map);
+      if (currentLayer) map.removeLayer(currentLayer);
+      if (currentMarker) map.removeLayer(currentMarker);
 
-    var currentGeoJsonLayer = null;
-    var currentMarker = null;
+      currentLayer = L.geoJSON(geo).addTo(map);
+      currentMarker = L.marker([c.lat, c.lng]).addTo(map);
 
-    function resetLists() {
-      aroundListEl.innerHTML = '<div class="mini">未計算</div>';
-      parentListEl.innerHTML = '<div class="mini">未計算</div>';
-      childrenListEl.innerHTML = '<div class="mini">未計算</div>';
+      map.fitBounds(currentLayer.getBounds());
     }
 
-    function resetReverseResult() {
-      reverseLngEl.textContent = "-";
-      reverseLatEl.textContent = "-";
-      reverseAltEl.textContent = "-";
-    }
-
-    function normalizeZfxyString(value) {
-      return (value || "").trim().replace(/^\//, "");
-    }
-
-    function rowForSpace(space) {
-      var div = document.createElement("div");
-      div.className = "list-item";
-
-      var left = document.createElement("div");
-      left.innerHTML =
-        "<div><strong>" + space.zfxyStr.replace(/^\//, "") + "</strong></div>" +
-        "<div class='mini'>zoom=" + space.zoom + "</div>";
-
-      div.appendChild(left);
-
-      div.style.cursor = "pointer";
-      div.addEventListener("click", function () {
-        currentSpace = space;
-        renderAll(space);
-        msgEl.textContent = "選択した空間IDを表示しました。";
-      });
-
-      return div;
-    }
-
-    function renderMain(space) {
-      zfxyEl.textContent = space.zfxyStr.replace(/^\//, "");
-    }
-
-    function renderAround(space) {
-      try {
-        var around = space.surroundings();
-        aroundListEl.innerHTML = "";
-
-        if (!around || around.length === 0) {
-          aroundListEl.innerHTML = '<div class="mini">周辺がありません</div>';
-          return;
-        }
-
-        for (var i = 0; i < around.length; i++) {
-          aroundListEl.appendChild(rowForSpace(around[i]));
-        }
-      } catch (e) {
-        console.error(e);
-        aroundListEl.innerHTML = '<div class="mini">周辺の表示でエラーが発生しました</div>';
-      }
-    }
-
-    function renderParent(space) {
-      try {
-        var parent = space.parent();
-        parentListEl.innerHTML = "";
-        parentListEl.appendChild(rowForSpace(parent));
-      } catch (e) {
-        console.error(e);
-        parentListEl.innerHTML = '<div class="mini">親の表示でエラーが発生しました</div>';
-      }
-    }
-
-    function renderChildren(space) {
-      try {
-        var children = space.children();
-        childrenListEl.innerHTML = "";
-
-        if (!children || children.length === 0) {
-          childrenListEl.innerHTML = '<div class="mini">子がありません</div>';
-          return;
-        }
-
-        for (var i = 0; i < children.length; i++) {
-          childrenListEl.appendChild(rowForSpace(children[i]));
-        }
-      } catch (e) {
-        console.error(e);
-        childrenListEl.innerHTML = '<div class="mini">子の表示でエラーが発生しました</div>';
-      }
-    }
-
-    function renderMap(space) {
-      try {
-        var geom = space.toGeoJSON();
-
-        if (currentGeoJsonLayer) {
-          map.removeLayer(currentGeoJsonLayer);
-        }
-        if (currentMarker) {
-          map.removeLayer(currentMarker);
-        }
-
-        currentGeoJsonLayer = L.geoJSON(geom, {
-          style: function () {
-            return {
-              color: "#2457d6",
-              weight: 2,
-              fillColor: "#2457d6",
-              fillOpacity: 0.2
-            };
-          }
-        }).addTo(map);
-
-        var c = space.center;
-        currentMarker = L.marker([c.lat, c.lng]).addTo(map);
-
-        map.fitBounds(currentGeoJsonLayer.getBounds(), {
-          padding: [20, 20]
-        });
-      } catch (e) {
-        console.error(e);
-        msgEl.textContent = "地図表示中にエラーが発生しました。";
-      }
-    }
-
-    function renderAll(space) {
-      renderMain(space);
-      renderAround(space);
-      renderParent(space);
-      renderChildren(space);
-      renderMap(space);
-    }
-
-    formEl.addEventListener("submit", function (ev) {
-      ev.preventDefault();
-
-      var lat = parseFloat(($("lat").value || "").trim());
-      var lng = parseFloat(($("lng").value || "").trim());
-      var z = parseInt(($("z").value || "25").trim(), 10);
-      var h = parseFloat(($("h").value || "0").trim());
-
-      if ([lat, lng, z, h].some(function (v) { return Number.isNaN(v); })) {
-        msgEl.textContent = "入力値を確認してください（緯度・経度・ズーム・高さ）。";
-        zfxyEl.textContent = "-";
-        resetLists();
-        return;
-      }
-
-      if (z < 0 || z > 30) {
-        msgEl.textContent = "ズームレベルは 0〜30 の範囲で入力してください。";
-        return;
-      }
+    // 計算
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
 
       try {
-        currentSpace = Space.getSpaceByLocation({ lat: lat, lng: lng, alt: h }, z);
-        renderAll(currentSpace);
-        msgEl.textContent = "計算しました。";
+        const z = parseInt($("z").value);
+        const h = parseFloat($("h").value);
+        const lng = parseFloat($("lng").value);
+        const lat = parseFloat($("lat").value);
+
+        const space = Space.getSpaceByLocation({ lat, lng, alt: h }, z);
+
+        zfxyEl.textContent = space.zfxyStr.replace("/", "");
+        msgEl.textContent = "計算しました";
+
+        draw(space);
       } catch (e) {
-        console.error(e);
-        msgEl.textContent = "計算中にエラーが発生しました。入力値とズームを確認してください。";
-        zfxyEl.textContent = "-";
-        resetLists();
+        msgEl.textContent = "入力エラー";
       }
     });
 
-    reverseFormEl.addEventListener("submit", function (ev) {
-      ev.preventDefault();
-
-      var input = normalizeZfxyString(spaceIdInputEl.value);
-
-      if (!input) {
-        reverseMsgEl.textContent = "空間IDを入力してください。";
-        resetReverseResult();
-        return;
-      }
+    // 逆変換
+    reverseForm.addEventListener("submit", (e) => {
+      e.preventDefault();
 
       try {
-        var space = Space.getSpaceByZFXY(input);
-        var c = space.center;
+        const id = $("space-id").value.trim();
 
-        currentSpace = space;
-        reverseLngEl.textContent = c.lng.toFixed(6);
-        reverseLatEl.textContent = c.lat.toFixed(6);
-        reverseAltEl.textContent = String(c.alt);
-        reverseMsgEl.textContent = "変換しました。";
+        const space = Space.getSpaceByZFXY(id);
+        const c = space.center;
 
-        renderAll(space);
+        lngEl.textContent = c.lng.toFixed(6);
+        latEl.textContent = c.lat.toFixed(6);
+        altEl.textContent = c.alt;
+
+        draw(space);
       } catch (e) {
-        console.error(e);
-        reverseMsgEl.textContent = "空間IDの形式を確認してください。例: 25/22/18827764/14674339";
-        resetReverseResult();
+        alert("形式エラー");
       }
-    });
-
-    if (fillCurrentEl) {
-      fillCurrentEl.addEventListener("click", function () {
-        if (!currentSpace) {
-          reverseMsgEl.textContent = "先に座標から空間IDを計算してください。";
-          return;
-        }
-        spaceIdInputEl.value = currentSpace.zfxyStr.replace(/^\//, "");
-        reverseMsgEl.textContent = "現在の計算結果を入力しました。";
-      });
-    }
-
-    if (zoomPlusBtn) {
-      zoomPlusBtn.addEventListener("click", function () {
-        if (!currentSpace) {
-          msgEl.textContent = "まず入力して「計算」を実行してください。";
-          return;
-        }
-
-        var c = currentSpace.center;
-        var nextZoom = currentSpace.zoom + 1;
-
-        if (nextZoom > 30) {
-          msgEl.textContent = "これ以上ズームを上げられません（最大 30）。";
-          return;
-        }
-
-        currentSpace = Space.getSpaceByLocation(
-          { lat: c.lat, lng: c.lng, alt: c.alt },
-          nextZoom
-        );
-
-        $("z").value = String(currentSpace.zoom);
-        renderAll(currentSpace);
-        msgEl.textContent = "ズームを " + nextZoom + " に変更しました。";
-      });
-    }
-
-    if (zoomMinusBtn) {
-      zoomMinusBtn.addEventListener("click", function () {
-        if (!currentSpace) {
-          msgEl.textContent = "まず入力して「計算」を実行してください。";
-          return;
-        }
-
-        var c = currentSpace.center;
-        var nextZoom = currentSpace.zoom - 1;
-
-        if (nextZoom < 0) {
-          msgEl.textContent = "これ以上ズームを下げられません（最小 0）。";
-          return;
-        }
-
-        currentSpace = Space.getSpaceByLocation(
-          { lat: c.lat, lng: c.lng, alt: c.alt },
-          nextZoom
-        );
-
-        $("z").value = String(currentSpace.zoom);
-        renderAll(currentSpace);
-        msgEl.textContent = "ズームを " + nextZoom + " に変更しました。";
-      });
-    }
-
-    clearEl.addEventListener("click", function () {
-      $("lat").value = "";
-      $("lng").value = "";
-      $("z").value = "25";
-      $("h").value = "0";
-
-      zfxyEl.textContent = "-";
-      msgEl.textContent = "入力値をクリアしました。";
-      currentSpace = null;
-      resetLists();
-
-      spaceIdInputEl.value = "";
-      reverseMsgEl.textContent = "";
-      resetReverseResult();
-
-      if (currentGeoJsonLayer) {
-        map.removeLayer(currentGeoJsonLayer);
-        currentGeoJsonLayer = null;
-      }
-      if (currentMarker) {
-        map.removeLayer(currentMarker);
-        currentMarker = null;
-      }
-
-      map.setView([35.681236, 139.767125], 14);
     });
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", start);
-  } else {
-    start();
-  }
+  document.addEventListener("DOMContentLoaded", start);
 })();
