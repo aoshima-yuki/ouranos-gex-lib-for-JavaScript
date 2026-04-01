@@ -5,62 +5,114 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>空間ID試行環境</title>
   <link rel="stylesheet" href="style.css" />
-
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
   <main class="container">
-
-    <header class="header">
+    <header class="hero">
+      <p class="hero-kicker">Spatial ID Demo</p>
       <h1>空間ID試行環境</h1>
-      <p class="sub">
-        ズームレベル、標高、経度、緯度から z/f/x/y を計算し、空間IDを出力します。
+      <p class="hero-sub">
+        ズームレベル、標高、経度、緯度から <strong>z/f/x/y</strong> を計算し、空間IDを出力します。<br>
+        また、空間IDから中心の経度・緯度・標高を確認できます。
       </p>
     </header>
 
-    <!-- 入力 -->
-    <section class="card">
-      <h2 class="section-title">空間ID計算</h2>
+    <div class="layout">
+      <!-- 左カラム -->
+      <section class="panel">
+        <div class="panel-head">
+          <h2>空間ID計算</h2>
+          <p>各項目を入力して空間IDを計算します。</p>
+        </div>
 
-      <form id="calc-form" class="stack">
-        <input type="number" id="z" placeholder="ズームレベル" value="25" required />
-        <input type="number" id="h" placeholder="標高(m)" value="0" required />
-        <input type="number" id="lng" placeholder="経度" step="any" required />
-        <input type="number" id="lat" placeholder="緯度" step="any" required />
+        <form id="calc-form" class="form-grid">
+          <label class="field">
+            <span class="field-label">ズームレベル</span>
+            <span class="field-help">例: 25</span>
+            <input type="number" id="z" placeholder="例: 25" value="25" required />
+          </label>
 
-        <button type="submit" class="btn">計算</button>
-        <p id="msg" class="msg"></p>
+          <label class="field">
+            <span class="field-label">標高 (m)</span>
+            <span class="field-help">例: 0 / 22</span>
+            <input type="number" id="h" placeholder="例: 0" value="0" required />
+          </label>
+
+          <label class="field">
+            <span class="field-label">経度</span>
+            <span class="field-help">例: 139.767125</span>
+            <input type="number" id="lng" placeholder="例: 139.767125" step="any" required />
+          </label>
+
+          <label class="field">
+            <span class="field-label">緯度</span>
+            <span class="field-help">例: 35.681236</span>
+            <input type="number" id="lat" placeholder="例: 35.681236" step="any" required />
+          </label>
+
+          <div class="actions">
+            <button type="submit" class="btn">計算</button>
+          </div>
+
+          <p id="msg" class="msg"></p>
+        </form>
+      </section>
+
+      <!-- 右カラム -->
+      <section class="panel accent-panel">
+        <div class="panel-head">
+          <h2>空間ID</h2>
+          <p>計算結果として出力される z/f/x/y です。</p>
+        </div>
+
+        <div class="result-box">
+          <code id="zfxy" class="zfxy-accent">-</code>
+        </div>
+      </section>
+    </div>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2>空間ID → 座標</h2>
+        <p>空間IDから中心の経度・緯度・標高を確認します。</p>
+      </div>
+
+      <form id="reverse-form" class="form-grid single-col">
+        <label class="field">
+          <span class="field-label">空間ID (z/f/x/y)</span>
+          <span class="field-help">例: 25/22/18827764/14674339</span>
+          <input id="space-id" placeholder="例: 25/22/18827764/14674339" required />
+        </label>
+
+        <div class="actions">
+          <button type="submit" class="btn">変換</button>
+        </div>
       </form>
-    </section>
 
-    <!-- 結果 -->
-    <section class="card">
-      <h2 class="section-title">結果</h2>
-      <code id="zfxy" class="zfxy-accent">-</code>
-    </section>
-
-    <!-- 逆変換 -->
-    <section class="card">
-      <h2 class="section-title">空間ID → 座標</h2>
-
-      <form id="reverse-form" class="stack">
-        <input id="space-id" placeholder="例: 25/22/18827764/14674339" required />
-        <button type="submit" class="btn">変換</button>
-      </form>
-
-      <div class="out">
-        <div>lng: <code id="reverse-lng">-</code></div>
-        <div>lat: <code id="reverse-lat">-</code></div>
-        <div>alt: <code id="reverse-alt">-</code></div>
+      <div class="coord-grid">
+        <div class="coord-card">
+          <div class="coord-label">経度 (lng)</div>
+          <code id="reverse-lng" class="coord-value">-</code>
+        </div>
+        <div class="coord-card">
+          <div class="coord-label">緯度 (lat)</div>
+          <code id="reverse-lat" class="coord-value">-</code>
+        </div>
+        <div class="coord-card">
+          <div class="coord-label">標高 (alt)</div>
+          <code id="reverse-alt" class="coord-value">-</code>
+        </div>
       </div>
     </section>
 
-    <!-- 地図 -->
-    <section class="card">
-      <h2 class="section-title">地図</h2>
+    <section class="panel">
+      <div class="panel-head">
+        <h2>地図表示</h2>
+        <p>計算または変換した空間IDの 2D 範囲を地図上に表示します。</p>
+      </div>
       <div id="map" class="map"></div>
     </section>
-
   </main>
 
   <script src="./vendor/spatialid/index.js"></script>
