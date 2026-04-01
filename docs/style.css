@@ -1,0 +1,157 @@
+
+:root {
+  --bg: #ffffff;
+  --fg: #1a1a1a;
+  --muted: #555555;
+  --border: #d0d7de;
+
+  --btn-bg: #2457d6;
+  --btn-bg-hover: #1b46ad;
+  --btn-fg: #ffffff;
+
+  --btn-sec-bg: #6b7280;
+  --btn-sec-hover: #525862;
+
+  --chip-bg: #eef3ff;
+
+  /* 結果強調用 */
+  --accent-strong: #0f2dbb;
+  --accent-bg: #e7efff;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--fg);
+  background: var(--bg);
+  margin: 0;
+}
+
+.container { max-width: 960px; margin: 24px auto; padding: 0 16px; }
+
+.header h1 { margin: 0 0 8px; }
+.header .sub { color: var(--muted); margin: 0 0 16px; }
+
+.stack { display: grid; gap: 12px; }
+
+.field .label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+.field input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+.btn:hover {
+  background: var(--btn-bg-hover);
+  box-shadow: 0 2px 8px rgba(36, 87, 214, 0.25);
+}
+.btn.secondary {
+  background: var(--btn-sec-bg);
+}
+.btn.secondary:hover {
+  background: var(--btn-sec-hover);
+  box-shadow: 0 2px 8px rgba(82, 88, 98, 0.25);
+}
+
+.msg { min-height: 20px; color: var(--muted); }
+
+.card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  margin-top: 18px;
+  background: #fafbfc;
+}
+
+.out { display: grid; gap: 8px; }
+.out-line code {
+  background: var(--chip-bg);
+  padding: 3px 8px;
+  border-radius: 8px;
+}
+
+.grid { display: grid; gap: 12px; }
+.grid.cols-2 { grid-template-columns: 1fr 1fr; }
+
+.list { display: grid; gap: 6px; }
+.list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #fff;
+}
+
+.mini { font-size: 12px; color: var(--muted); }
+.section-title { margin: 6px 0 10px; font-size: 16px; }
+
+/* ===== 結果強調（z/f/x/y を目立たせる＆全体の可読性アップ） ===== */
+.result-card {
+  border-color: #c9d3f8;
+  background: #f4f7ff;
+}
+.result-out { gap: 12px; }
+
+.label-strong { font-size: 15px; color: #2a2a2a; }
+
+/* z/f/x/y 本体：一番目立たせる */
+.zfxy-accent {
+  display: inline-block;
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--accent-strong);
+  background: var(--accent-bg);
+  padding: 8px 12px;
+  border-radius: 10px;
+  letter-spacing: 0.02em;
+  border: 1px solid #c9d3f8;
+}
+
+/* tilehash：z/f/x/yより一段小さく、でも見やすく */
+.result-code-lg {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+  background: #ffffff;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid #e6e8ee;
+}
+
+/* 中心座標：さらに一段小さく、整った読みやすさ */
+.result-code-md {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+  background: #ffffff;
+   padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid #e6e8ee;
+}
+
+/* 結果内の code 背景は個別指定に任せる */
+.result-out .out-line code {
+  background: transparent;
+}
