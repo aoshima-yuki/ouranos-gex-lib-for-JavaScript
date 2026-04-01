@@ -198,6 +198,19 @@ body {
   background: transparent;
 }
 
+.map-sub {
+  margin-bottom: 12px;
+}
+
+.map {
+  width: 100%;
+  height: 420px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #e5e7eb;
+}
+
 @media (max-width: 768px) {
   .grid.cols-2 {
     grid-template-columns: 1fr;
@@ -205,5 +218,9 @@ body {
 
   .zfxy-accent {
     font-size: 22px;
+  }
+
+  .map {
+    height: 320px;
   }
 }
