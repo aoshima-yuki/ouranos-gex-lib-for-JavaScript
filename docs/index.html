@@ -6,141 +6,65 @@
   <title>空間ID試行環境</title>
   <link rel="stylesheet" href="style.css" />
 
-  <!-- Leaflet -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-    crossorigin=""
-  />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
   <main class="container">
+
     <header class="header">
       <h1>空間ID試行環境</h1>
       <p class="sub">
-        緯度・経度・ズーム・高さから <strong>z/f/x/y</strong> を試算し、
-        空間IDから中心の緯度・経度・標高も確認できます。
+        ズームレベル、標高、経度、緯度から z/f/x/y を計算し、空間IDを出力します。
       </p>
     </header>
 
+    <!-- 入力 -->
     <section class="card">
-      <h2 class="section-title">座標から空間IDを計算</h2>
+      <h2 class="section-title">空間ID計算</h2>
 
-      <form id="calc-form" class="stack" novalidate>
-        <label class="field">
-          <span class="label">緯度 (度)</span>
-          <input type="number" id="lat" step="any" placeholder="例: 35.681236" required />
-        </label>
-        <label class="field">
-          <span class="label">経度 (度)</span>
-          <input type="number" id="lng" step="any" placeholder="例: 139.767125" required />
-        </label>
-        <label class="field">
-          <span class="label">ズームレベル</span>
-          <input type="number" id="z" min="0" max="30" step="1" value="25" required />
-        </label>
-        <label class="field">
-          <span class="label">高さ (m)</span>
-          <input type="number" id="h" step="any" value="0" required />
-        </label>
+      <form id="calc-form" class="stack">
+        <input type="number" id="z" placeholder="ズームレベル" value="25" required />
+        <input type="number" id="h" placeholder="標高(m)" value="0" required />
+        <input type="number" id="lng" placeholder="経度" step="any" required />
+        <input type="number" id="lat" placeholder="緯度" step="any" required />
 
-        <div class="actions">
-          <button type="submit" id="btn" class="btn">計算</button>
-          <button type="button" id="clear" class="btn secondary">クリア</button>
-        </div>
-
-        <p id="msg" class="msg" aria-live="polite"></p>
+        <button type="submit" class="btn">計算</button>
+        <p id="msg" class="msg"></p>
       </form>
     </section>
 
-    <section id="result" class="card result-card">
-      <h2 class="section-title">計算結果</h2>
-      <div class="out result-out">
-        <div class="out-line result-zfxy-line">
-          <strong class="label-strong">z/f/x/y:</strong>
-          <code id="zfxy" class="zfxy-accent">-</code>
-        </div>
-      </div>
+    <!-- 結果 -->
+    <section class="card">
+      <h2 class="section-title">結果</h2>
+      <code id="zfxy" class="zfxy-accent">-</code>
     </section>
 
+    <!-- 逆変換 -->
     <section class="card">
-      <h2 class="section-title">空間IDから座標を確認</h2>
+      <h2 class="section-title">空間ID → 座標</h2>
 
-      <form id="reverse-form" class="stack" novalidate>
-        <label class="field">
-          <span class="label">空間ID (z/f/x/y)</span>
-          <input
-            type="text"
-            id="space-id"
-            placeholder="例: 25/22/18827764/14674339"
-            required
-          />
-        </label>
-
-        <div class="actions">
-          <button type="submit" class="btn">変換</button>
-          <button type="button" id="fill-current" class="btn secondary">計算結果を入力</button>
-        </div>
-
-        <p id="reverse-msg" class="msg" aria-live="polite"></p>
+      <form id="reverse-form" class="stack">
+        <input id="space-id" placeholder="例: 25/22/18827764/14674339" required />
+        <button type="submit" class="btn">変換</button>
       </form>
 
-      <div class="out result-out">
-        <div class="out-line">
-          <strong>経度 (lng):</strong>
-          <code id="reverse-lng" class="result-code-md">-</code>
-        </div>
-        <div class="out-line">
-          <strong>緯度 (lat):</strong>
-          <code id="reverse-lat" class="result-code-md">-</code>
-        </div>
-        <div class="out-line">
-          <strong>標高 (alt):</strong>
-          <code id="reverse-alt" class="result-code-md">-</code>
-        </div>
+      <div class="out">
+        <div>lng: <code id="reverse-lng">-</code></div>
+        <div>lat: <code id="reverse-lat">-</code></div>
+        <div>alt: <code id="reverse-alt">-</code></div>
       </div>
     </section>
 
+    <!-- 地図 -->
     <section class="card">
-      <h2 class="section-title">地図表示</h2>
-      <p class="sub map-sub">計算または変換した空間IDの 2D 範囲を地図上に表示します。</p>
+      <h2 class="section-title">地図</h2>
       <div id="map" class="map"></div>
     </section>
 
-    <section class="card">
-      <h2 class="section-title">ズーム操作</h2>
-      <div class="actions">
-        <button id="zoom-plus" class="btn" type="button">ズームレベル +1</button>
-        <button id="zoom-minus" class="btn" type="button">ズームレベル -1</button>
-      </div>
-    </section>
-
-    <section id="hierarchy" class="card">
-      <div class="grid cols-2">
-        <div>
-          <h3 class="mini">親</h3>
-          <div class="list" id="parent-list"><div class="mini">未計算</div></div>
-        </div>
-        <div>
-          <h3 class="mini">子</h3>
-          <div class="list" id="children-list"><div class="mini">未計算</div></div>
-        </div>
-      </div>
-    </section>
-
-    <section id="around" class="card">
-      <h2 class="section-title">周辺タイル</h2>
-      <div class="list" id="around-list"><div class="mini">未計算</div></div>
-    </section>
   </main>
 
   <script src="./vendor/spatialid/index.js"></script>
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""
-  ></script>
-  <script src="./app.js?v=20260401-02"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="./app.js"></script>
 </body>
 </html>
