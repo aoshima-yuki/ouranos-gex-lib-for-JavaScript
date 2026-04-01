@@ -19,7 +19,6 @@
     </header>
 
     <div class="layout">
-      <!-- 左カラム -->
       <section class="panel">
         <div class="panel-head">
           <h2>空間ID計算</h2>
@@ -30,23 +29,23 @@
           <label class="field">
             <span class="field-label">ズームレベル</span>
             <span class="field-help">例: 25</span>
-            <input type="number" id="z" placeholder="例: 25" value="25" required />
+            <input type="number" id="z" placeholder="例: 25" required />
           </label>
 
           <label class="field">
             <span class="field-label">標高 (m)</span>
-            <span class="field-help">例: 0 / 22</span>
-            <input type="number" id="h" placeholder="例: 0" value="0" required />
+            <span class="field-help">例: 22</span>
+            <input type="number" id="h" placeholder="例: 22" required />
           </label>
 
           <label class="field">
-            <span class="field-label">経度</span>
+            <span class="field-label">経度 (度)</span>
             <span class="field-help">例: 139.767125</span>
             <input type="number" id="lng" placeholder="例: 139.767125" step="any" required />
           </label>
 
           <label class="field">
-            <span class="field-label">緯度</span>
+            <span class="field-label">緯度 (度)</span>
             <span class="field-help">例: 35.681236</span>
             <input type="number" id="lat" placeholder="例: 35.681236" step="any" required />
           </label>
@@ -59,7 +58,6 @@
         </form>
       </section>
 
-      <!-- 右カラム -->
       <section class="panel accent-panel">
         <div class="panel-head">
           <h2>空間ID</h2>
@@ -92,15 +90,15 @@
 
       <div class="coord-grid">
         <div class="coord-card">
-          <div class="coord-label">経度 (lng)</div>
+          <div class="coord-label">経度 (lng, 度)</div>
           <code id="reverse-lng" class="coord-value">-</code>
         </div>
         <div class="coord-card">
-          <div class="coord-label">緯度 (lat)</div>
+          <div class="coord-label">緯度 (lat, 度)</div>
           <code id="reverse-lat" class="coord-value">-</code>
         </div>
         <div class="coord-card">
-          <div class="coord-label">標高 (alt)</div>
+          <div class="coord-label">標高 (alt, m)</div>
           <code id="reverse-alt" class="coord-value">-</code>
         </div>
       </div>
