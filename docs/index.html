@@ -13,8 +13,7 @@
       <p class="hero-kicker">Spatial ID Demo</p>
       <h1>空間ID試行環境</h1>
       <p class="hero-sub">
-        ズームレベル、標高、経度、緯度から <strong>z/f/x/y</strong> を計算し、空間IDを出力します。<br>
-        また、空間IDから中心の経度・緯度・標高を確認できます。
+        ズームレベル、標高、経度、緯度から <strong>z/f/x/y</strong> を計算し、空間IDを出力します。
       </p>
     </header>
 
@@ -29,25 +28,25 @@
           <label class="field">
             <span class="field-label">ズームレベル</span>
             <span class="field-help">例: 25</span>
-            <input type="number" id="z" placeholder="例: 25" required />
+            <input type="number" id="z" required />
           </label>
 
           <label class="field">
             <span class="field-label">標高 (m)</span>
             <span class="field-help">例: 22</span>
-            <input type="number" id="h" placeholder="例: 22" required />
+            <input type="number" id="h" required />
           </label>
 
           <label class="field">
             <span class="field-label">経度 (度)</span>
-            <span class="field-help">例: 139.767125</span>
-            <input type="number" id="lng" placeholder="例: 139.767125" step="any" required />
+            <span class="field-help">例: 139.7409559872962</span>
+            <input type="number" id="lng" step="any" required />
           </label>
 
           <label class="field">
             <span class="field-label">緯度 (度)</span>
-            <span class="field-help">例: 35.681236</span>
-            <input type="number" id="lat" placeholder="例: 35.681236" step="any" required />
+            <span class="field-help">例: 35.672195798131135</span>
+            <input type="number" id="lat" step="any" required />
           </label>
 
           <div class="actions">
@@ -72,42 +71,8 @@
 
     <section class="panel">
       <div class="panel-head">
-        <h2>空間ID → 座標</h2>
-        <p>空間IDから中心の経度・緯度・標高を確認します。</p>
-      </div>
-
-      <form id="reverse-form" class="form-grid single-col">
-        <label class="field">
-          <span class="field-label">空間ID (z/f/x/y)</span>
-          <span class="field-help">例: 25/22/18827764/14674339</span>
-          <input id="space-id" placeholder="例: 25/22/18827764/14674339" required />
-        </label>
-
-        <div class="actions">
-          <button type="submit" class="btn">変換</button>
-        </div>
-      </form>
-
-      <div class="coord-grid">
-        <div class="coord-card">
-          <div class="coord-label">経度 (lng, 度)</div>
-          <code id="reverse-lng" class="coord-value">-</code>
-        </div>
-        <div class="coord-card">
-          <div class="coord-label">緯度 (lat, 度)</div>
-          <code id="reverse-lat" class="coord-value">-</code>
-        </div>
-        <div class="coord-card">
-          <div class="coord-label">標高 (alt, m)</div>
-          <code id="reverse-alt" class="coord-value">-</code>
-        </div>
-      </div>
-    </section>
-
-    <section class="panel">
-      <div class="panel-head">
         <h2>地図表示</h2>
-        <p>計算または変換した空間IDの 2D 範囲を地図上に表示します。</p>
+        <p>計算した空間IDの 2D 範囲を地図上に表示します。</p>
       </div>
       <div id="map" class="map"></div>
     </section>
