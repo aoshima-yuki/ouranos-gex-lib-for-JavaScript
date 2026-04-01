@@ -56,7 +56,7 @@ body {
   margin-bottom: 6px;
 }
 
-.field input {
+input {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid var(--border);
@@ -107,9 +107,14 @@ body {
 .card {
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 14px;
+  padding: 16px;
   margin-top: 18px;
   background: #fafbfc;
+}
+
+.section-title {
+  margin: 0 0 12px;
+  font-size: 16px;
 }
 
 .out {
@@ -119,57 +124,8 @@ body {
 
 .out-line code {
   background: var(--chip-bg);
-  padding: 3px 8px;
+  padding: 4px 8px;
   border-radius: 8px;
-}
-
-.grid {
-  display: grid;
-  gap: 12px;
-}
-
-.grid.cols-2 {
-  grid-template-columns: 1fr 1fr;
-}
-
-.list {
-  display: grid;
-  gap: 6px;
-}
-
-.list-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  border: 1px dashed var(--border);
-  border-radius: 10px;
-  padding: 10px 12px;
-  background: #fff;
-}
-
-.mini {
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.section-title {
-  margin: 6px 0 10px;
-  font-size: 16px;
-}
-
-.result-card {
-  border-color: #c9d3f8;
-  background: #f4f7ff;
-}
-
-.result-out {
-  gap: 12px;
-}
-
-.label-strong {
-  font-size: 15px;
-  color: #2a2a2a;
 }
 
 .zfxy-accent {
@@ -178,44 +134,21 @@ body {
   font-weight: 800;
   color: var(--accent-strong);
   background: var(--accent-bg);
-  padding: 8px 12px;
+  padding: 10px 14px;
   border-radius: 10px;
-  letter-spacing: 0.02em;
   border: 1px solid #c9d3f8;
-}
-
-.result-code-md {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1a1a1a;
-  background: #ffffff;
-  padding: 6px 8px;
-  border-radius: 8px;
-  border: 1px solid #e6e8ee;
-}
-
-.result-out .out-line code {
-  background: transparent;
-}
-
-.map-sub {
-  margin-bottom: 12px;
 }
 
 .map {
   width: 100%;
-  height: 420px;
-  border: 1px solid var(--border);
+  height: 400px;
   border-radius: 12px;
+  border: 1px solid var(--border);
   overflow: hidden;
   background: #e5e7eb;
 }
 
 @media (max-width: 768px) {
-  .grid.cols-2 {
-    grid-template-columns: 1fr;
-  }
-
   .zfxy-accent {
     font-size: 22px;
   }
