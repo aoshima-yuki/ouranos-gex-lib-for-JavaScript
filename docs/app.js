@@ -11,6 +11,15 @@
       return;
     }
 
+    if (!window.L) {
+      console.error("Leaflet が読み込まれていません。");
+      var m2 = document.getElementById("msg");
+      if (m2) {
+        m2.textContent = "地図ライブラリが読み込めていません。";
+      }
+      return;
+    }
+
     function $(id) {
       var el = document.getElementById(id);
       if (!el) throw new Error("Element #" + id + " not found");
@@ -42,6 +51,16 @@
     var Space = window.SpatialId.Space;
     var currentSpace = null;
 
+    // Leaflet map
+    var map = L.map("map").setView([35.681236, 139.767125], 14);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap contributors"
+    }).addTo(map);
+
+    var currentGeoJsonLayer = null;
+    var currentMarker = null;
+
     function resetLists() {
       aroundListEl.innerHTML = '<div class="mini">未計算</div>';
       parentListEl.innerHTML = '<div class="mini">未計算</div>';
@@ -68,6 +87,14 @@
         "<div class='mini'>zoom=" + space.zoom + "</div>";
 
       div.appendChild(left);
+
+      div.style.cursor = "pointer";
+      div.addEventListener("click", function () {
+        currentSpace = space;
+        renderAll(space);
+        msgEl.textContent = "選択した空間IDを表示しました。";
+      });
+
       return div;
     }
 
@@ -124,11 +151,46 @@
       }
     }
 
+    function renderMap(space) {
+      try {
+        var geom = space.toGeoJSON();
+
+        if (currentGeoJsonLayer) {
+          map.removeLayer(currentGeoJsonLayer);
+        }
+        if (currentMarker) {
+          map.removeLayer(currentMarker);
+        }
+
+        currentGeoJsonLayer = L.geoJSON(geom, {
+          style: function () {
+            return {
+              color: "#2457d6",
+              weight: 2,
+              fillColor: "#2457d6",
+              fillOpacity: 0.2
+            };
+          }
+        }).addTo(map);
+
+        var c = space.center;
+        currentMarker = L.marker([c.lat, c.lng]).addTo(map);
+
+        map.fitBounds(currentGeoJsonLayer.getBounds(), {
+          padding: [20, 20]
+        });
+      } catch (e) {
+        console.error(e);
+        msgEl.textContent = "地図表示中にエラーが発生しました。";
+      }
+    }
+
     function renderAll(space) {
       renderMain(space);
       renderAround(space);
       renderParent(space);
       renderChildren(space);
+      renderMap(space);
     }
 
     formEl.addEventListener("submit", function (ev) {
@@ -155,9 +217,6 @@
         currentSpace = Space.getSpaceByLocation({ lat: lat, lng: lng, alt: h }, z);
         renderAll(currentSpace);
         msgEl.textContent = "計算しました。";
-
-        // 逆変換欄に最新結果を自動反映したい場合は以下を有効化
-        // spaceIdInputEl.value = currentSpace.zfxyStr.replace(/^\//, "");
       } catch (e) {
         console.error(e);
         msgEl.textContent = "計算中にエラーが発生しました。入力値とズームを確認してください。";
@@ -181,10 +240,13 @@
         var space = Space.getSpaceByZFXY(input);
         var c = space.center;
 
+        currentSpace = space;
         reverseLngEl.textContent = c.lng.toFixed(6);
         reverseLatEl.textContent = c.lat.toFixed(6);
         reverseAltEl.textContent = String(c.alt);
         reverseMsgEl.textContent = "変換しました。";
+
+        renderAll(space);
       } catch (e) {
         console.error(e);
         reverseMsgEl.textContent = "空間IDの形式を確認してください。例: 25/22/18827764/14674339";
@@ -269,6 +331,17 @@
       spaceIdInputEl.value = "";
       reverseMsgEl.textContent = "";
       resetReverseResult();
+
+      if (currentGeoJsonLayer) {
+        map.removeLayer(currentGeoJsonLayer);
+        currentGeoJsonLayer = null;
+      }
+      if (currentMarker) {
+        map.removeLayer(currentMarker);
+        currentMarker = null;
+      }
+
+      map.setView([35.681236, 139.767125], 14);
     });
   }
 
