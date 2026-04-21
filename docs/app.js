@@ -20,7 +20,6 @@
       invalidAlt: `標高は ${MIN_ALT} ～ ${MAX_ALT} m の範囲で入力してください。`,
       invalidZoom: `ズームレベルは ${MIN_Z} ～ ${MAX_Z} の整数で入力してください。`,
       invalidInput: "入力値を確認してください。",
-      calculated: "空間IDを計算しました。",
       calcError: "計算中にエラーが発生しました。"
     },
     en: {
@@ -31,7 +30,6 @@
       invalidAlt: `Altitude must be between ${MIN_ALT} and ${MAX_ALT} meters.`,
       invalidZoom: `Zoom level must be an integer between ${MIN_Z} and ${MAX_Z}.`,
       invalidInput: "Please check the input values.",
-      calculated: "Spatial ID calculated.",
       calcError: "An error occurred during calculation."
     }
   };
@@ -40,17 +38,17 @@
     ja: {
       pageTitle: "空間ID試行環境",
       inputTitle: "入力",
-      inputDesc: "緯度・経度、必要に応じて標高、ズームレベルを入力します。",
+      inputDesc: "緯度・経度・標高・ズームレベルを入力します。",
       latLabel: "緯度（度）",
       lngLabel: "経度（度）",
       altLabel: "標高（m）",
       zoomLabel: "ズームレベル",
-      calcButton: "計算する",
+      calcButton: "計算",
       resultTitle: "出力",
       resultDesc: "算出された空間ID（z/f/x/y）を表示します。",
       resultLabel: "空間ID",
       mapTitle: "地図",
-      mapDesc: "入力地点および対応する空間の範囲を表示します。",
+      mapDesc: "対応する空間ボクセルの2D範囲を表示します。",
       linksTitle: "関連情報",
       guidelineLink: "4次元時空間情報利活用のための空間IDガイドライン",
       repoLink: "Open Data Spaces 4次元時空間ID 関連リポジトリ",
@@ -59,7 +57,7 @@
     en: {
       pageTitle: "Spatial ID Demo",
       inputTitle: "Input",
-      inputDesc: "Enter latitude, longitude, altitude if needed, and zoom level.",
+      inputDesc: "Enter latitude, longitude, altitude, and zoom level.",
       latLabel: "Latitude (deg)",
       lngLabel: "Longitude (deg)",
       altLabel: "Altitude (m)",
@@ -69,7 +67,7 @@
       resultDesc: "Displays the calculated Spatial ID (z/f/x/y).",
       resultLabel: "Spatial ID",
       mapTitle: "Map",
-      mapDesc: "Shows the input point and the corresponding spatial area.",
+      mapDesc: "Displays the 2D footprint of the corresponding spatial voxel.",
       linksTitle: "Related links",
       guidelineLink: "Spatial ID Guideline for Utilization of 4D Spatio-Temporal Information",
       repoLink: "Open Data Spaces Spatial ID Related Repositories",
@@ -123,6 +121,10 @@
 
     function setMessage(key) {
       msgEl.textContent = messages[currentLang][key] || "";
+    }
+
+    function clearMessage() {
+      msgEl.textContent = "";
     }
 
     function applyTranslations(lang) {
@@ -216,7 +218,7 @@
       try {
         const space = Space.getSpaceByLocation({ lat, lng, alt }, z);
         zfxyEl.textContent = space.zfxyStr.replace(/^\//, "");
-        setMessage("calculated");
+        clearMessage();
         draw(space);
       } catch (err) {
         console.error(err);
@@ -228,7 +230,7 @@
 
     langSelect.addEventListener("change", function () {
       applyTranslations(langSelect.value);
-      msgEl.textContent = "";
+      clearMessage();
     });
 
     form.addEventListener("submit", function (e) {
@@ -243,7 +245,7 @@
     zEl.value = DEFAULT_ZOOM;
     hEl.value = "";
 
-    msgEl.textContent = "";
+    clearMessage();
   }
 
   document.addEventListener("DOMContentLoaded", start);
