@@ -14,7 +14,7 @@
 <body>
   <main class="container">
     <header class="page-header">
-      <div>
+      <div class="page-title-wrap">
         <h1 data-i18n="pageTitle">空間ID試行環境</h1>
       </div>
 
@@ -31,7 +31,7 @@
       <div class="panel-header">
         <h2 data-i18n="inputTitle">入力</h2>
         <p data-i18n="inputDesc">
-          緯度・経度、必要に応じて標高、ズームレベルを入力します。
+          緯度・経度・標高・ズームレベルを入力します。
         </p>
       </div>
 
@@ -92,7 +92,7 @@
         </label>
 
         <div class="actions">
-          <button type="submit" class="btn-primary" data-i18n="calcButton">計算する</button>
+          <button type="submit" class="btn-primary" data-i18n="calcButton">計算</button>
           <p id="msg" class="message" aria-live="polite"></p>
         </div>
       </form>
@@ -116,7 +116,7 @@
       <div class="panel-header">
         <h2 data-i18n="mapTitle">地図</h2>
         <p data-i18n="mapDesc">
-          入力地点および対応する空間の範囲を表示します。
+          対応する空間ボクセルの2D範囲を表示します。
         </p>
       </div>
       <div id="map" class="map" aria-label="map"></div>
