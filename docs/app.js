@@ -48,7 +48,7 @@
       resultDesc: "算出された空間ID（z/f/x/y）を表示します。",
       resultLabel: "空間ID",
       mapTitle: "地図",
-      mapDesc: "空間ボクセルを2Dで表示します。",
+      mapDesc: "空間ボクセルの2D範囲を表示します。",
       linksTitle: "関連情報",
       guidelineLink: "4次元時空間情報利活用のための空間IDガイドライン",
       repoLink: "Open Data Spaces 4次元時空間ID 関連リポジトリ",
@@ -67,7 +67,7 @@
       resultDesc: "Displays the calculated Spatial ID (z/f/x/y).",
       resultLabel: "Spatial ID",
       mapTitle: "Map",
-      mapDesc: "Displays the spatial voxel in 2D.",
+      mapDesc: "Displays the 2D extent of the spatial voxel.",
       linksTitle: "Related links",
       guidelineLink: "Spatial ID Guideline for Utilization of 4D Spatio-Temporal Information",
       repoLink: "Open Data Spaces Spatial ID Related Repositories",
@@ -79,25 +79,19 @@
     const msgEl = document.getElementById("msg");
 
     if (!window.SpatialId || !window.SpatialId.Space) {
-      if (msgEl) {
-        msgEl.textContent = messages.ja.libraryMissing;
-      }
+      if (msgEl) msgEl.textContent = messages.ja.libraryMissing;
       return;
     }
 
     if (!window.L) {
-      if (msgEl) {
-        msgEl.textContent = messages.ja.mapMissing;
-      }
+      if (msgEl) msgEl.textContent = messages.ja.mapMissing;
       return;
     }
 
     const Space = window.SpatialId.Space;
 
     function $(id) {
-      const el = document.getElementById(id);
-      if (!el) throw new Error("Element #" + id + " not found");
-      return el;
+      return document.getElementById(id);
     }
 
     const form = $("calc-form");
@@ -108,7 +102,7 @@
     const zfxyEl = $("zfxy");
     const langSelect = $("lang-select");
 
-    let currentLang = document.documentElement.lang === "en" ? "en" : "ja";
+    let currentLang = "ja";
     let currentLayer = null;
     let currentMarker = null;
 
@@ -119,36 +113,18 @@
       attribution: "&copy; OpenStreetMap contributors"
     }).addTo(map);
 
-    function setMessage(key) {
-      msgEl.textContent = messages[currentLang][key] || "";
-    }
-
-    function clearMessage() {
-      msgEl.textContent = "";
-    }
-
     function applyTranslations(lang) {
       currentLang = lang;
-      document.documentElement.lang = lang;
-
       const dict = translations[lang];
-      document.querySelectorAll("[data-i18n]").forEach((el) => {
+      document.querySelectorAll("[data-i18n]").forEach(el => {
         const key = el.getAttribute("data-i18n");
-        if (dict[key]) {
-          el.textContent = dict[key];
-        }
+        if (dict[key]) el.textContent = dict[key];
       });
     }
 
     function clearDrawings() {
-      if (currentLayer) {
-        map.removeLayer(currentLayer);
-        currentLayer = null;
-      }
-      if (currentMarker) {
-        map.removeLayer(currentMarker);
-        currentMarker = null;
-      }
+      if (currentLayer) map.removeLayer(currentLayer);
+      if (currentMarker) map.removeLayer(currentMarker);
     }
 
     function draw(space) {
@@ -158,94 +134,40 @@
       clearDrawings();
 
       currentLayer = L.geoJSON(geo, {
-        style: function () {
-          return {
-            color: "#2457d6",
-            weight: 2,
-            fillColor: "#2457d6",
-            fillOpacity: 0.2
-          };
-        }
+        style: { color: "#2457d6", weight: 2, fillOpacity: 0.2 }
       }).addTo(map);
 
       currentMarker = L.marker([c.lat, c.lng]).addTo(map);
 
-      map.fitBounds(currentLayer.getBounds(), {
-        padding: [20, 20]
-      });
-    }
-
-    function parseAltitude(value) {
-      if (value === "" || value == null) {
-        return 0;
-      }
-      return parseFloat(value);
-    }
-
-    function validate(lat, lng, alt, z) {
-      if ([lat, lng, alt, z].some((v) => Number.isNaN(v))) {
-        return "invalidInput";
-      }
-      if (lat < MIN_LAT || lat > MAX_LAT) {
-        return "invalidLat";
-      }
-      if (lng < MIN_LNG || lng > MAX_LNG) {
-        return "invalidLng";
-      }
-      if (alt < MIN_ALT || alt > MAX_ALT) {
-        return "invalidAlt";
-      }
-      if (!Number.isInteger(z) || z < MIN_Z || z > MAX_Z) {
-        return "invalidZoom";
-      }
-      return null;
+      map.fitBounds(currentLayer.getBounds(), { padding: [20, 20] });
     }
 
     function calculateAndDraw() {
       const lat = parseFloat(latEl.value);
       const lng = parseFloat(lngEl.value);
-      const alt = parseAltitude(hEl.value);
+      const alt = hEl.value === "" ? 0 : parseFloat(hEl.value);
       const z = parseInt(zEl.value, 10);
-
-      const errorKey = validate(lat, lng, alt, z);
-      if (errorKey) {
-        setMessage(errorKey);
-        zfxyEl.textContent = "-";
-        clearDrawings();
-        return;
-      }
 
       try {
         const space = Space.getSpaceByLocation({ lat, lng, alt }, z);
         zfxyEl.textContent = space.zfxyStr.replace(/^\//, "");
-        clearMessage();
         draw(space);
-      } catch (err) {
-        console.error(err);
-        setMessage("calcError");
-        zfxyEl.textContent = "-";
-        clearDrawings();
+        msgEl.textContent = "";
+      } catch {
+        msgEl.textContent = messages[currentLang].calcError;
       }
     }
 
-    langSelect.addEventListener("change", function () {
-      applyTranslations(langSelect.value);
-      clearMessage();
-    });
-
-    form.addEventListener("submit", function (e) {
+    form.addEventListener("submit", e => {
       e.preventDefault();
       calculateAndDraw();
     });
 
-    applyTranslations(currentLang);
+    langSelect.addEventListener("change", e => {
+      applyTranslations(e.target.value);
+    });
 
-    latEl.value = DEFAULT_LAT;
-    lngEl.value = DEFAULT_LNG;
-    zEl.value = DEFAULT_ZOOM;
-    hEl.value = "";
-
-    clearMessage();
+    applyTranslations("ja");
   }
 
   document.addEventListener("DOMContentLoaded", start);
