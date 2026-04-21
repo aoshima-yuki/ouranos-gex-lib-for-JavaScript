@@ -1,7 +1,8 @@
 (() => {
   const DEFAULT_LAT = 35.73004672351672;
   const DEFAULT_LNG = 139.7474538411047;
-  const DEFAULT_ZOOM = 15;
+  const DEFAULT_ZOOM = 20;
+  const MIN_ALT = -33554432;
   const MAX_ALT = 33554432;
   const MIN_LAT = -85.05112878;
   const MAX_LAT = 85.05112878;
@@ -16,7 +17,7 @@
       mapMissing: "地図ライブラリが読み込めていません。",
       invalidLat: `緯度は ${MIN_LAT} ～ ${MAX_LAT} の範囲で入力してください。`,
       invalidLng: `経度は ${MIN_LNG} ～ ${MAX_LNG} の範囲で入力してください。`,
-      invalidAlt: `標高は 0 ～ ${MAX_ALT} m の範囲で入力してください。`,
+      invalidAlt: `標高は ${MIN_ALT} ～ ${MAX_ALT} m の範囲で入力してください。`,
       invalidZoom: `ズームレベルは ${MIN_Z} ～ ${MAX_Z} の整数で入力してください。`,
       invalidInput: "入力値を確認してください。",
       calculated: "空間IDを計算しました。",
@@ -27,7 +28,7 @@
       mapMissing: "Map library is not loaded.",
       invalidLat: `Latitude must be between ${MIN_LAT} and ${MAX_LAT}.`,
       invalidLng: `Longitude must be between ${MIN_LNG} and ${MAX_LNG}.`,
-      invalidAlt: `Altitude must be between 0 and ${MAX_ALT} meters.`,
+      invalidAlt: `Altitude must be between ${MIN_ALT} and ${MAX_ALT} meters.`,
       invalidZoom: `Zoom level must be an integer between ${MIN_Z} and ${MAX_Z}.`,
       invalidInput: "Please check the input values.",
       calculated: "Spatial ID calculated.",
@@ -38,19 +39,12 @@
   const translations = {
     ja: {
       pageTitle: "空間ID試行環境",
-      pageLead: "位置情報から空間ID（z/f/x/y）を算出し、対象範囲を地図上で確認できます。",
-      eyebrow: "Spatial ID Demo",
-      languageLabel: "表示言語",
       inputTitle: "入力",
       inputDesc: "緯度・経度、必要に応じて標高、ズームレベルを入力します。",
       latLabel: "緯度（度）",
       lngLabel: "経度（度）",
-      altLabel: "標高（m・任意）",
+      altLabel: "標高（m）",
       zoomLabel: "ズームレベル",
-      latNote: "-85.05112878 ～ 85.05112878",
-      lngNote: "-180 ～ 180",
-      altNote: "未入力の場合は 0m として計算",
-      zoomNote: "0 ～ 35 の整数",
       calcButton: "計算する",
       resultTitle: "出力",
       resultDesc: "算出された空間ID（z/f/x/y）を表示します。",
@@ -64,19 +58,12 @@
     },
     en: {
       pageTitle: "Spatial ID Demo",
-      pageLead: "Calculate Spatial ID (z/f/x/y) from a location and view the corresponding area on the map.",
-      eyebrow: "Spatial ID Demo",
-      languageLabel: "Language",
       inputTitle: "Input",
       inputDesc: "Enter latitude, longitude, altitude if needed, and zoom level.",
       latLabel: "Latitude (deg)",
       lngLabel: "Longitude (deg)",
-      altLabel: "Altitude (m, optional)",
+      altLabel: "Altitude (m)",
       zoomLabel: "Zoom level",
-      latNote: "-85.05112878 to 85.05112878",
-      lngNote: "-180 to 180",
-      altNote: "If empty, 0 m is used",
-      zoomNote: "Integer from 0 to 35",
       calcButton: "Calculate",
       resultTitle: "Output",
       resultDesc: "Displays the calculated Spatial ID (z/f/x/y).",
@@ -203,7 +190,7 @@
       if (lng < MIN_LNG || lng > MAX_LNG) {
         return "invalidLng";
       }
-      if (alt < 0 || alt > MAX_ALT) {
+      if (alt < MIN_ALT || alt > MAX_ALT) {
         return "invalidAlt";
       }
       if (!Number.isInteger(z) || z < MIN_Z || z > MAX_Z) {
