@@ -18,78 +18,69 @@
   const messages = {
     ja: {
       libraryMissing: "ライブラリが読み込めていません。",
-      mapMissing: "地図ライブラリが読み込めていません。",
+      mapMissing: "3D地図ライブラリが読み込めていません。",
       invalidLat: `緯度は ${MIN_LAT} ～ ${MAX_LAT} の範囲で入力してください。`,
       invalidLng: `経度は ${MIN_LNG} ～ ${MAX_LNG} の範囲で入力してください。`,
       invalidAlt: `標高は ${MIN_ALT} ～ ${MAX_ALT} m の範囲で入力してください。`,
       invalidZoom: `ズームレベルは ${MIN_Z} ～ ${MAX_Z} の整数で入力してください。`,
-      calcError: "計算中にエラーが発生しました。",
-      clickApplied: "地図クリック位置の緯度・経度を入力欄に反映しました。",
-      ready: "緯度・経度・標高・ズームレベルを変更すると自動計算されます。"
+      calcError: "計算中にエラーが発生しました。"
     },
     en: {
       libraryMissing: "Spatial ID library is not loaded.",
-      mapMissing: "Map library is not loaded.",
+      mapMissing: "3D map library is not loaded.",
       invalidLat: `Latitude must be between ${MIN_LAT} and ${MAX_LAT}.`,
       invalidLng: `Longitude must be between ${MIN_LNG} and ${MAX_LNG}.`,
       invalidAlt: `Altitude must be between ${MIN_ALT} and ${MAX_ALT} meters.`,
       invalidZoom: `Zoom level must be an integer between ${MIN_Z} and ${MAX_Z}.`,
-      calcError: "An error occurred during calculation.",
-      clickApplied: "The clicked map location has been applied to latitude and longitude.",
-      ready: "The Spatial ID is calculated automatically when an input value changes."
+      calcError: "An error occurred during calculation."
     }
   };
 
   const translations = {
     ja: {
       pageTitle: "空間ID試行環境",
-      pageDesc: "緯度・経度・標高・ズームレベルから空間ID（z/f/x/y）を算出し、地図上の範囲と3Dイメージを確認できます。緯度・経度は10進度で入力してください。地図をクリックして座標を入力することもできます。",
+      pageDesc:
+        "緯度・経度・標高・ズームレベルから空間ID（z/f/x/y）を算出できます。地図をクリックして座標を入力することもできます。",
       inputTitle: "入力",
       latLabel: "緯度（10進度）",
       lngLabel: "経度（10進度）",
       altLabel: "標高（m）",
       zoomLabel: "ズームレベル",
-      calcButton: "再計算",
-      hintTitle: "操作メモ",
-      hintText: "手入力または地図クリックで座標を指定できます。入力値は自動で検証・計算されます。",
       resultTitle: "出力",
       resultLabel: "空間ID",
       centerLabel: "中心座標",
       floorLabel: "下端標高",
       ceilingLabel: "上端標高",
-      mapTitle: "地図・3D表示",
+      mapTitle: "3D地図",
       mapHelp: "地図をクリックすると緯度・経度欄に反映されます。",
-      voxel3dTitle: "3Dイメージ",
-      voxel3dCaption: "F方向（高さ方向）の違いを直感的に確認するための模式表示です。",
       linksTitle: "関連情報",
       guidelineLink: "4次元時空間情報利活用のための空間IDガイドライン",
       repoLink: "Open Data Spaces 4次元時空間ID 関連リポジトリ",
-      footerNote: "本画面は試行環境です。表示結果は利用者の責任においてご確認ください。"
+      footerNote:
+        "本画面は試行環境です。表示結果は利用者の責任においてご確認ください。"
     },
     en: {
       pageTitle: "Spatial ID Demo",
-      pageDesc: "Calculate a Spatial ID (z/f/x/y) from latitude, longitude, altitude, and zoom level, and check its map extent and 3D preview. Enter latitude and longitude in decimal degrees. You can also click the map to fill in the coordinates.",
+      pageDesc:
+        "Calculate a Spatial ID (z/f/x/y) from latitude, longitude, altitude, and zoom level. You can also click the map to fill in the coordinates.",
       inputTitle: "Input",
       latLabel: "Latitude (decimal degrees)",
       lngLabel: "Longitude (decimal degrees)",
       altLabel: "Altitude (m)",
       zoomLabel: "Zoom level",
-      calcButton: "Recalculate",
-      hintTitle: "Note",
-      hintText: "Set coordinates manually or by clicking the map. Values are validated and calculated automatically.",
       resultTitle: "Output",
       resultLabel: "Spatial ID",
       centerLabel: "Center",
       floorLabel: "Floor altitude",
       ceilingLabel: "Ceiling altitude",
-      mapTitle: "Map / 3D View",
+      mapTitle: "3D Map",
       mapHelp: "Click the map to update latitude and longitude.",
-      voxel3dTitle: "3D Preview",
-      voxel3dCaption: "Schematic view to help understand the F direction, or vertical difference.",
       linksTitle: "Related links",
-      guidelineLink: "Spatial ID Guideline for Utilization of 4D Spatio-Temporal Information",
+      guidelineLink:
+        "Spatial ID Guideline for Utilization of 4D Spatio-Temporal Information",
       repoLink: "Open Data Spaces Spatial ID Related Repositories",
-      footerNote: "This page is provided as a trial environment. Please verify the results at your own responsibility."
+      footerNote:
+        "This page is provided as a trial environment. Please verify the results at your own responsibility."
     }
   };
 
@@ -101,12 +92,13 @@
       return;
     }
 
-    if (!window.L) {
+    if (!window.Cesium) {
       if (msgEl) msgEl.textContent = messages.ja.mapMissing;
       return;
     }
 
     const Space = window.SpatialId.Space;
+    const Cesium = window.Cesium;
 
     function $(id) {
       return document.getElementById(id);
@@ -122,24 +114,42 @@
     const floorEl = $("floor");
     const ceilingEl = $("ceiling");
     const langSelect = $("lang-select");
-    const voxelInfoEl = $("voxel-info");
 
     let currentLang = "ja";
-    let currentLayer = null;
-    let currentMarker = null;
     let debounceTimer = null;
+    let voxelEntity = null;
+    let centerEntity = null;
 
     latEl.value = formatCoord(DEFAULT_LAT);
     lngEl.value = formatCoord(DEFAULT_LNG);
     hEl.value = String(DEFAULT_ALT);
     zEl.value = String(DEFAULT_ZOOM);
 
-    const map = L.map("map").setView([DEFAULT_LAT, DEFAULT_LNG], 16);
+    Cesium.Ion.defaultAccessToken = "";
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: "&copy; OpenStreetMap contributors"
-    }).addTo(map);
+    const viewer = new Cesium.Viewer("map", {
+      animation: false,
+      timeline: false,
+      baseLayerPicker: true,
+      geocoder: false,
+      homeButton: true,
+      sceneModePicker: true,
+      navigationHelpButton: false,
+      fullscreenButton: false,
+      infoBox: false,
+      selectionIndicator: false,
+      terrainProvider: new Cesium.EllipsoidTerrainProvider()
+    });
+
+    viewer.scene.globe.depthTestAgainstTerrain = true;
+    viewer.camera.setView({
+      destination: Cesium.Cartesian3.fromDegrees(DEFAULT_LNG, DEFAULT_LAT, 1200),
+      orientation: {
+        heading: Cesium.Math.toRadians(0),
+        pitch: Cesium.Math.toRadians(-55),
+        roll: 0
+      }
+    });
 
     function applyTranslations(lang) {
       currentLang = lang;
@@ -177,10 +187,21 @@
       const alt = hEl.value === "" ? 0 : toNumber(hEl);
       const z = toNumber(zEl);
 
-      if (!isInRange(lat, MIN_LAT, MAX_LAT)) return { ok: false, message: messages[currentLang].invalidLat };
-      if (!isInRange(lng, MIN_LNG, MAX_LNG)) return { ok: false, message: messages[currentLang].invalidLng };
-      if (!isInRange(alt, MIN_ALT, MAX_ALT)) return { ok: false, message: messages[currentLang].invalidAlt };
-      if (!Number.isInteger(z) || !isInRange(z, MIN_Z, MAX_Z)) return { ok: false, message: messages[currentLang].invalidZoom };
+      if (!isInRange(lat, MIN_LAT, MAX_LAT)) {
+        return { ok: false, message: messages[currentLang].invalidLat };
+      }
+
+      if (!isInRange(lng, MIN_LNG, MAX_LNG)) {
+        return { ok: false, message: messages[currentLang].invalidLng };
+      }
+
+      if (!isInRange(alt, MIN_ALT, MAX_ALT)) {
+        return { ok: false, message: messages[currentLang].invalidAlt };
+      }
+
+      if (!Number.isInteger(z) || !isInRange(z, MIN_Z, MAX_Z)) {
+        return { ok: false, message: messages[currentLang].invalidZoom };
+      }
 
       return { ok: true, lat, lng, alt, z };
     }
@@ -193,63 +214,127 @@
 
       if (state.ok) return;
 
-      if (state.message === messages[currentLang].invalidLat) latEl.setCustomValidity(state.message);
-      if (state.message === messages[currentLang].invalidLng) lngEl.setCustomValidity(state.message);
-      if (state.message === messages[currentLang].invalidAlt) hEl.setCustomValidity(state.message);
-      if (state.message === messages[currentLang].invalidZoom) zEl.setCustomValidity(state.message);
-    }
+      if (state.message === messages[currentLang].invalidLat) {
+        latEl.setCustomValidity(state.message);
+      }
 
-    function clearDrawings() {
-      if (currentLayer) map.removeLayer(currentLayer);
-      if (currentMarker) map.removeLayer(currentMarker);
-      currentLayer = null;
-      currentMarker = null;
-    }
+      if (state.message === messages[currentLang].invalidLng) {
+        lngEl.setCustomValidity(state.message);
+      }
 
-    function draw(space) {
-      const geo = space.toGeoJSON();
-      const c = space.center;
+      if (state.message === messages[currentLang].invalidAlt) {
+        hEl.setCustomValidity(state.message);
+      }
 
-      clearDrawings();
-
-      currentLayer = L.geoJSON(geo, {
-        style: { color: "#2457d6", weight: 2, fillOpacity: 0.2 }
-      }).addTo(map);
-
-      currentMarker = L.marker([c.lat, c.lng]).addTo(map);
-
-      const bounds = currentLayer.getBounds();
-      if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [16, 16], maxZoom: 18 });
+      if (state.message === messages[currentLang].invalidZoom) {
+        zEl.setCustomValidity(state.message);
       }
     }
 
-    function getTileHeight(space) {
-      const zfxy = space.zfxy || space.zfxyTile || null;
-      const z = zfxy && Number.isInteger(zfxy.z) ? zfxy.z : Number(zEl.value);
+    function clearEntities() {
+      if (voxelEntity) viewer.entities.remove(voxelEntity);
+      if (centerEntity) viewer.entities.remove(centerEntity);
+      voxelEntity = null;
+      centerEntity = null;
+    }
+
+    function getTileHeight(space, z) {
+      if (space.zfxy && Number.isInteger(space.zfxy.z)) {
+        return Math.pow(2, 25 - space.zfxy.z);
+      }
       return Math.pow(2, 25 - z);
     }
 
-    function getFloorAltitude(space, fallbackAlt) {
+    function getFloorAltitude(space, fallbackAlt, z) {
       if (typeof space.alt === "number") return space.alt;
       if (typeof space.floor === "number") return space.floor;
+
       if (space.zfxy && Number.isFinite(space.zfxy.f)) {
         return space.zfxy.f * Math.pow(2, 25 - space.zfxy.z);
       }
+
       return fallbackAlt;
     }
 
+    function extractPolygonPositions(space) {
+      const geo = space.toGeoJSON();
+
+      if (!geo || !geo.geometry) return null;
+
+      if (geo.geometry.type === "Polygon") {
+        return geo.geometry.coordinates[0];
+      }
+
+      if (
+        geo.geometry.type === "MultiPolygon" &&
+        geo.geometry.coordinates.length > 0
+      ) {
+        return geo.geometry.coordinates[0][0];
+      }
+
+      return null;
+    }
+
+    function draw3DVoxel(space, input) {
+      clearEntities();
+
+      const positions = extractPolygonPositions(space);
+      if (!positions || positions.length < 4) return;
+
+      const floor = getFloorAltitude(space, input.alt, input.z);
+      const height = getTileHeight(space, input.z);
+      const ceiling = floor + height;
+
+      const hierarchyPositions = positions.map(coord =>
+        Cesium.Cartesian3.fromDegrees(coord[0], coord[1], floor)
+      );
+
+      voxelEntity = viewer.entities.add({
+        name: "Spatial ID voxel",
+        polygon: {
+          hierarchy: new Cesium.PolygonHierarchy(hierarchyPositions),
+          height: floor,
+          extrudedHeight: ceiling,
+          material: Cesium.Color.ROYALBLUE.withAlpha(0.28),
+          outline: true,
+          outlineColor: Cesium.Color.BLUE
+        }
+      });
+
+      centerEntity = viewer.entities.add({
+        name: "Voxel center",
+        position: Cesium.Cartesian3.fromDegrees(
+          space.center.lng,
+          space.center.lat,
+          floor + height / 2
+        ),
+        point: {
+          pixelSize: 8,
+          color: Cesium.Color.RED,
+          outlineColor: Cesium.Color.WHITE,
+          outlineWidth: 2
+        }
+      });
+
+      viewer.flyTo(voxelEntity, {
+        duration: 0.7,
+        offset: new Cesium.HeadingPitchRange(
+          Cesium.Math.toRadians(0),
+          Cesium.Math.toRadians(-45),
+          Math.max(80, height * 80)
+        )
+      });
+    }
+
     function updateOutput(space, input) {
-      const center = space.center;
-      const floor = getFloorAltitude(space, input.alt);
-      const height = getTileHeight(space);
+      const floor = getFloorAltitude(space, input.alt, input.z);
+      const height = getTileHeight(space, input.z);
       const ceiling = floor + height;
 
       zfxyEl.textContent = space.zfxyStr.replace(/^\//, "");
-      centerEl.textContent = `${formatCoord(center.lat)}, ${formatCoord(center.lng)}`;
+      centerEl.textContent = `${formatCoord(space.center.lat)}, ${formatCoord(space.center.lng)}`;
       floorEl.textContent = formatMeter(floor);
       ceilingEl.textContent = formatMeter(ceiling);
-      voxelInfoEl.textContent = `z=${input.z} / height=${formatMeter(height)}`;
     }
 
     function calculate() {
@@ -262,33 +347,57 @@
         centerEl.textContent = "-";
         floorEl.textContent = "-";
         ceilingEl.textContent = "-";
-        clearDrawings();
+        clearEntities();
         return;
       }
 
       try {
-        const space = Space.getSpaceByLocation({ lat: state.lat, lng: state.lng, alt: state.alt }, state.z);
+        const space = Space.getSpaceByLocation(
+          { lat: state.lat, lng: state.lng, alt: state.alt },
+          state.z
+        );
+
         updateOutput(space, state);
-        draw(space);
-        msgEl.textContent = messages[currentLang].ready;
+        draw3DVoxel(space, state);
+        msgEl.textContent = "";
       } catch (error) {
-        msgEl.textContent = `${messages[currentLang].calcError} ${error.message || ""}`.trim();
+        msgEl.textContent = `${messages[currentLang].calcError} ${
+          error.message || ""
+        }`.trim();
       }
     }
 
     function validateAndCalculate(debounce = true) {
       window.clearTimeout(debounceTimer);
+
       if (!debounce) {
         calculate();
         return;
       }
+
       debounceTimer = window.setTimeout(calculate, DEBOUNCE_MS);
     }
 
-    function applyMapClick(latlng) {
-      latEl.value = formatCoord(latlng.lat);
-      lngEl.value = formatCoord(latlng.lng);
-      msgEl.textContent = messages[currentLang].clickApplied;
+    function applyMapClick(position) {
+      const cartesian = viewer.scene.pickPosition(position);
+
+      let pickedCartesian = cartesian;
+
+      if (!Cesium.defined(pickedCartesian)) {
+        const ray = viewer.camera.getPickRay(position);
+        pickedCartesian = viewer.scene.globe.pick(ray, viewer.scene);
+      }
+
+      if (!Cesium.defined(pickedCartesian)) return;
+
+      const cartographic = Cesium.Cartographic.fromCartesian(pickedCartesian);
+      const lat = Cesium.Math.toDegrees(cartographic.latitude);
+      const lng = Cesium.Math.toDegrees(cartographic.longitude);
+
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+      latEl.value = formatCoord(lat);
+      lngEl.value = formatCoord(lng);
       validateAndCalculate(false);
     }
 
@@ -313,7 +422,10 @@
       applyTranslations(e.target.value);
     });
 
-    map.on("click", e => applyMapClick(e.latlng));
+    const clickHandler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+    clickHandler.setInputAction(click => {
+      applyMapClick(click.position);
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
     applyTranslations("ja");
   }
