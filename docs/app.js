@@ -18,7 +18,7 @@
   const messages = {
     ja: {
       libraryMissing: "ライブラリが読み込めていません。",
-      mapMissing: "3D地図ライブラリが読み込めていません。",
+      mapMissing: "地図ライブラリが読み込めていません。",
       invalidLat: `緯度は ${MIN_LAT} ～ ${MAX_LAT} の範囲で入力してください。`,
       invalidLng: `経度は ${MIN_LNG} ～ ${MAX_LNG} の範囲で入力してください。`,
       invalidAlt: `標高は ${MIN_ALT} ～ ${MAX_ALT} m の範囲で入力してください。`,
@@ -27,7 +27,7 @@
     },
     en: {
       libraryMissing: "Spatial ID library is not loaded.",
-      mapMissing: "3D map library is not loaded.",
+      mapMissing: "Map library is not loaded.",
       invalidLat: `Latitude must be between ${MIN_LAT} and ${MAX_LAT}.`,
       invalidLng: `Longitude must be between ${MIN_LNG} and ${MAX_LNG}.`,
       invalidAlt: `Altitude must be between ${MIN_ALT} and ${MAX_ALT} meters.`,
@@ -51,7 +51,7 @@
       centerLabel: "中心座標",
       floorLabel: "下端標高",
       ceilingLabel: "上端標高",
-      mapTitle: "3D地図",
+      mapTitle: "地図",
       mapHelp: "地図をクリックすると緯度・経度欄に反映されます。",
       linksTitle: "関連情報",
       guidelineLink: "4次元時空間情報利活用のための空間IDガイドライン",
@@ -73,7 +73,7 @@
       centerLabel: "Center",
       floorLabel: "Floor altitude",
       ceilingLabel: "Ceiling altitude",
-      mapTitle: "3D Map",
+      mapTitle: "Map",
       mapHelp: "Click the map to update latitude and longitude.",
       linksTitle: "Related links",
       guidelineLink:
@@ -89,6 +89,11 @@
 
     if (!window.SpatialId || !window.SpatialId.Space) {
       if (msgEl) msgEl.textContent = messages.ja.libraryMissing;
+      return;
+    }
+
+    if (!window.L) {
+      if (msgEl) msgEl.textContent = messages.ja.mapMissing;
       return;
     }
 
@@ -111,17 +116,20 @@
 
     let currentLang = "ja";
     let debounceTimer = null;
-
-    let viewer = null;
-    let voxelEntity = null;
-    let centerEntity = null;
-    let mapEnabled = false;
-    let isCameraInitialized = false;
+    let currentLayer = null;
+    let currentMarker = null;
 
     latEl.value = formatCoord(DEFAULT_LAT);
     lngEl.value = formatCoord(DEFAULT_LNG);
     hEl.value = String(DEFAULT_ALT);
     zEl.value = String(DEFAULT_ZOOM);
+
+    const map = L.map("map").setView([DEFAULT_LAT, DEFAULT_LNG], 16);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap contributors"
+    }).addTo(map);
 
     function applyTranslations(lang) {
       currentLang = lang;
@@ -266,13 +274,6 @@
       centerEl.textContent = `${formatCoord(center.lat)}, ${formatCoord(center.lng)}`;
       floorEl.textContent = formatMeter(floor);
       ceilingEl.textContent = formatMeter(ceiling);
-
-      return {
-        center,
-        floor,
-        height,
-        ceiling
-      };
     }
 
     function resetOutput() {
@@ -280,7 +281,40 @@
       centerEl.textContent = "-";
       floorEl.textContent = "-";
       ceilingEl.textContent = "-";
-      clearVoxel();
+      clearDrawings();
+    }
+
+    function clearDrawings() {
+      if (currentLayer) map.removeLayer(currentLayer);
+      if (currentMarker) map.removeLayer(currentMarker);
+
+      currentLayer = null;
+      currentMarker = null;
+    }
+
+    function draw(space, input) {
+      clearDrawings();
+
+      const geo = space.toGeoJSON();
+      const center = getCenter(space, input);
+
+      currentLayer = L.geoJSON(geo, {
+        style: {
+          color: "#2457d6",
+          weight: 2,
+          fillOpacity: 0.2
+        }
+      }).addTo(map);
+
+      currentMarker = L.marker([center.lat, center.lng]).addTo(map);
+
+      const bounds = currentLayer.getBounds();
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, {
+          padding: [20, 20],
+          maxZoom: 18
+        });
+      }
     }
 
     function calculate() {
@@ -303,14 +337,9 @@
           state.z
         );
 
-        const verticalInfo = updateOutput(space, state);
+        updateOutput(space, state);
+        draw(space, state);
         msgEl.textContent = "";
-
-        try {
-          drawVoxel(space, state, verticalInfo);
-        } catch (mapDrawError) {
-          console.warn("3D voxel draw error:", mapDrawError);
-        }
       } catch (error) {
         msgEl.textContent = `${messages[currentLang].calcError} ${
           error.message || ""
@@ -326,199 +355,9 @@
       }, DEBOUNCE_MS);
     }
 
-    function clearVoxel() {
-      if (!viewer) return;
-
-      if (voxelEntity) viewer.entities.remove(voxelEntity);
-      if (centerEntity) viewer.entities.remove(centerEntity);
-
-      voxelEntity = null;
-      centerEntity = null;
-    }
-
-    function extractOuterRing(space) {
-      if (typeof space.toGeoJSON !== "function") return null;
-
-      const geojson = space.toGeoJSON();
-      const geom = geojson.type === "Feature" ? geojson.geometry : geojson;
-
-      if (!geom || !geom.coordinates) return null;
-
-      if (geom.type === "Polygon") return geom.coordinates[0];
-
-      if (
-        geom.type === "MultiPolygon" &&
-        geom.coordinates &&
-        geom.coordinates[0] &&
-        geom.coordinates[0][0]
-      ) {
-        return geom.coordinates[0][0];
-      }
-
-      return null;
-    }
-
-    function drawVoxel(space, input, verticalInfo) {
-      if (!mapEnabled || !viewer || !window.Cesium) return;
-
-      const Cesium = window.Cesium;
-      const ring = extractOuterRing(space);
-
-      if (!ring || ring.length < 4) return;
-
-      clearVoxel();
-
-      const positions = [];
-
-      ring.forEach((coord, index) => {
-        const isClosingPoint =
-          index === ring.length - 1 &&
-          coord[0] === ring[0][0] &&
-          coord[1] === ring[0][1];
-
-        if (!isClosingPoint) {
-          positions.push(
-            Cesium.Cartesian3.fromDegrees(
-              coord[0],
-              coord[1],
-              verticalInfo.floor
-            )
-          );
-        }
-      });
-
-      if (positions.length < 3) return;
-
-      voxelEntity = viewer.entities.add({
-        name: "Spatial ID voxel",
-        polygon: {
-          hierarchy: new Cesium.PolygonHierarchy(positions),
-          height: verticalInfo.floor,
-          extrudedHeight: verticalInfo.ceiling,
-          material: Cesium.Color.ROYALBLUE.withAlpha(0.28),
-          outline: true,
-          outlineColor: Cesium.Color.ROYALBLUE
-        }
-      });
-
-      centerEntity = viewer.entities.add({
-        name: "Input point",
-        position: Cesium.Cartesian3.fromDegrees(
-          verticalInfo.center.lng,
-          verticalInfo.center.lat,
-          verticalInfo.ceiling
-        ),
-        point: {
-          pixelSize: 8,
-          color: Cesium.Color.DEEPSKYBLUE,
-          outlineColor: Cesium.Color.WHITE,
-          outlineWidth: 2,
-          disableDepthTestDistance: Number.POSITIVE_INFINITY
-        }
-      });
-
-      if (!isCameraInitialized) {
-        viewer.camera.flyTo({
-          destination: Cesium.Cartesian3.fromDegrees(
-            verticalInfo.center.lng,
-            verticalInfo.center.lat,
-            verticalInfo.ceiling + Math.max(250, verticalInfo.height * 18)
-          ),
-          orientation: {
-            heading: Cesium.Math.toRadians(0),
-            pitch: Cesium.Math.toRadians(-55),
-            roll: 0
-          },
-          duration: 0.8
-        });
-
-        isCameraInitialized = true;
-      }
-    }
-
-    function init3DMap() {
-      if (!window.Cesium || !$("map3d")) {
-        if (msgEl) msgEl.textContent = messages[currentLang].mapMissing;
-        return;
-      }
-
-      const Cesium = window.Cesium;
-
-      try {
-        viewer = new Cesium.Viewer("map3d", {
-          animation: false,
-          baseLayerPicker: false,
-          fullscreenButton: false,
-          geocoder: false,
-          homeButton: false,
-          infoBox: false,
-          sceneModePicker: false,
-          selectionIndicator: false,
-          timeline: false,
-          navigationHelpButton: false,
-          terrainProvider: new Cesium.EllipsoidTerrainProvider(),
-          imageryProvider: new Cesium.UrlTemplateImageryProvider({
-            url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-            maximumLevel: 19,
-            credit: "© OpenStreetMap contributors"
-          })
-        });
-
-        viewer.scene.globe.depthTestAgainstTerrain = false;
-        viewer.scene.screenSpaceCameraController.enableCollisionDetection = false;
-
-        viewer.camera.setView({
-          destination: Cesium.Cartesian3.fromDegrees(
-            DEFAULT_LNG,
-            DEFAULT_LAT,
-            1200
-          ),
-          orientation: {
-            heading: Cesium.Math.toRadians(0),
-            pitch: Cesium.Math.toRadians(-55),
-            roll: 0
-          }
-        });
-
-        const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
-
-        handler.setInputAction(click => {
-          applyMapClick(click.position);
-        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
-
-        mapEnabled = true;
-      } catch (error) {
-        mapEnabled = false;
-        viewer = null;
-
-        if (msgEl) {
-          msgEl.textContent = `${messages[currentLang].mapMissing} ${
-            error.message || ""
-          }`.trim();
-        }
-      }
-    }
-
-    function applyMapClick(position) {
-      if (!mapEnabled || !viewer || !window.Cesium) return;
-
-      const Cesium = window.Cesium;
-      const cartesian = viewer.camera.pickEllipsoid(
-        position,
-        viewer.scene.globe.ellipsoid
-      );
-
-      if (!cartesian) return;
-
-      const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
-      const lat = Cesium.Math.toDegrees(cartographic.latitude);
-      const lng = Cesium.Math.toDegrees(cartographic.longitude);
-
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-
-      latEl.value = formatCoord(lat);
-      lngEl.value = formatCoord(lng);
-
+    function applyMapClick(latlng) {
+      latEl.value = formatCoord(latlng.lat);
+      lngEl.value = formatCoord(latlng.lng);
       calculate();
     }
 
@@ -552,8 +391,11 @@
       });
     }
 
+    map.on("click", e => {
+      applyMapClick(e.latlng);
+    });
+
     applyTranslations("ja");
-    init3DMap();
 
     // 初期表示時にも出力を表示する
     calculate();
