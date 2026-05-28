@@ -92,13 +92,7 @@
       return;
     }
 
-    if (!window.Cesium) {
-      if (msgEl) msgEl.textContent = messages.ja.mapMissing;
-      return;
-    }
-
     const Space = window.SpatialId.Space;
-    const Cesium = window.Cesium;
 
     function $(id) {
       return document.getElementById(id);
@@ -117,39 +111,17 @@
 
     let currentLang = "ja";
     let debounceTimer = null;
+
+    let viewer = null;
     let voxelEntity = null;
     let centerEntity = null;
+    let mapEnabled = false;
+    let isCameraInitialized = false;
 
     latEl.value = formatCoord(DEFAULT_LAT);
     lngEl.value = formatCoord(DEFAULT_LNG);
     hEl.value = String(DEFAULT_ALT);
     zEl.value = String(DEFAULT_ZOOM);
-
-    Cesium.Ion.defaultAccessToken = "";
-
-    const viewer = new Cesium.Viewer("map", {
-      animation: false,
-      timeline: false,
-      baseLayerPicker: true,
-      geocoder: false,
-      homeButton: true,
-      sceneModePicker: true,
-      navigationHelpButton: false,
-      fullscreenButton: false,
-      infoBox: false,
-      selectionIndicator: false,
-      terrainProvider: new Cesium.EllipsoidTerrainProvider()
-    });
-
-    viewer.scene.globe.depthTestAgainstTerrain = true;
-    viewer.camera.setView({
-      destination: Cesium.Cartesian3.fromDegrees(DEFAULT_LNG, DEFAULT_LAT, 1200),
-      orientation: {
-        heading: Cesium.Math.toRadians(0),
-        pitch: Cesium.Math.toRadians(-55),
-        roll: 0
-      }
-    });
 
     function applyTranslations(lang) {
       currentLang = lang;
@@ -160,8 +132,6 @@
         const key = el.getAttribute("data-i18n");
         if (dict[key]) el.textContent = dict[key];
       });
-
-      validateAndCalculate(false);
     }
 
     function formatCoord(value) {
@@ -231,110 +201,86 @@
       }
     }
 
-    function clearEntities() {
-      if (voxelEntity) viewer.entities.remove(voxelEntity);
-      if (centerEntity) viewer.entities.remove(centerEntity);
-      voxelEntity = null;
-      centerEntity = null;
-    }
-
-    function getTileHeight(space, z) {
-      if (space.zfxy && Number.isInteger(space.zfxy.z)) {
-        return Math.pow(2, 25 - space.zfxy.z);
-      }
-      return Math.pow(2, 25 - z);
-    }
-
-    function getFloorAltitude(space, fallbackAlt, z) {
-      if (typeof space.alt === "number") return space.alt;
-      if (typeof space.floor === "number") return space.floor;
-
-      if (space.zfxy && Number.isFinite(space.zfxy.f)) {
-        return space.zfxy.f * Math.pow(2, 25 - space.zfxy.z);
-      }
-
-      return fallbackAlt;
-    }
-
-    function extractPolygonPositions(space) {
-      const geo = space.toGeoJSON();
-
-      if (!geo || !geo.geometry) return null;
-
-      if (geo.geometry.type === "Polygon") {
-        return geo.geometry.coordinates[0];
-      }
-
-      if (
-        geo.geometry.type === "MultiPolygon" &&
-        geo.geometry.coordinates.length > 0
-      ) {
-        return geo.geometry.coordinates[0][0];
-      }
-
+    function getTile(space) {
+      if (space.zfxy) return space.zfxy;
+      if (space.zfxyTile) return space.zfxyTile;
       return null;
     }
 
-    function draw3DVoxel(space, input) {
-      clearEntities();
+    function getTileHeight(space, fallbackZ) {
+      const tile = getTile(space);
+      const z = tile && Number.isInteger(tile.z) ? tile.z : fallbackZ;
+      return Math.pow(2, 25 - z);
+    }
 
-      const positions = extractPolygonPositions(space);
-      if (!positions || positions.length < 4) return;
+    function getFloorAltitude(space, fallbackAlt, fallbackZ) {
+      if (typeof space.alt === "number") return space.alt;
+      if (typeof space.floor === "number") return space.floor;
 
-      const floor = getFloorAltitude(space, input.alt, input.z);
-      const height = getTileHeight(space, input.z);
-      const ceiling = floor + height;
+      const tile = getTile(space);
 
-      const hierarchyPositions = positions.map(coord =>
-        Cesium.Cartesian3.fromDegrees(coord[0], coord[1], floor)
-      );
+      if (tile && Number.isFinite(tile.f) && Number.isFinite(tile.z)) {
+        return tile.f * Math.pow(2, 25 - tile.z);
+      }
 
-      voxelEntity = viewer.entities.add({
-        name: "Spatial ID voxel",
-        polygon: {
-          hierarchy: new Cesium.PolygonHierarchy(hierarchyPositions),
-          height: floor,
-          extrudedHeight: ceiling,
-          material: Cesium.Color.ROYALBLUE.withAlpha(0.28),
-          outline: true,
-          outlineColor: Cesium.Color.BLUE
-        }
-      });
+      const height = Math.pow(2, 25 - fallbackZ);
+      return Math.floor(fallbackAlt / height) * height;
+    }
 
-      centerEntity = viewer.entities.add({
-        name: "Voxel center",
-        position: Cesium.Cartesian3.fromDegrees(
-          space.center.lng,
-          space.center.lat,
-          floor + height / 2
-        ),
-        point: {
-          pixelSize: 8,
-          color: Cesium.Color.RED,
-          outlineColor: Cesium.Color.WHITE,
-          outlineWidth: 2
-        }
-      });
+    function getZfxyString(space) {
+      if (typeof space.zfxyStr === "string") {
+        return space.zfxyStr.replace(/^\//, "");
+      }
 
-      viewer.flyTo(voxelEntity, {
-        duration: 0.7,
-        offset: new Cesium.HeadingPitchRange(
-          Cesium.Math.toRadians(0),
-          Cesium.Math.toRadians(-45),
-          Math.max(80, height * 80)
-        )
-      });
+      const tile = getTile(space);
+
+      if (tile) {
+        return `${tile.z}/${tile.f}/${tile.x}/${tile.y}`;
+      }
+
+      return "-";
+    }
+
+    function getCenter(space, input) {
+      if (
+        space.center &&
+        Number.isFinite(space.center.lat) &&
+        Number.isFinite(space.center.lng)
+      ) {
+        return space.center;
+      }
+
+      return {
+        lat: input.lat,
+        lng: input.lng
+      };
     }
 
     function updateOutput(space, input) {
+      const center = getCenter(space, input);
       const floor = getFloorAltitude(space, input.alt, input.z);
       const height = getTileHeight(space, input.z);
       const ceiling = floor + height;
 
-      zfxyEl.textContent = space.zfxyStr.replace(/^\//, "");
-      centerEl.textContent = `${formatCoord(space.center.lat)}, ${formatCoord(space.center.lng)}`;
+      zfxyEl.textContent = getZfxyString(space);
+      centerEl.textContent = `${formatCoord(center.lat)}, ${formatCoord(center.lng)}`;
       floorEl.textContent = formatMeter(floor);
       ceilingEl.textContent = formatMeter(ceiling);
+
+      return {
+        center,
+        floor,
+        height,
+        ceiling
+      };
+    }
+
+    function resetOutput() {
+      zfxyEl.textContent = "-";
+      centerEl.textContent = "-";
+      floorEl.textContent = "-";
+      ceilingEl.textContent = "-";
+      clearVoxel();
     }
 
     function calculate() {
@@ -343,54 +289,228 @@
 
       if (!state.ok) {
         msgEl.textContent = state.message;
-        zfxyEl.textContent = "-";
-        centerEl.textContent = "-";
-        floorEl.textContent = "-";
-        ceilingEl.textContent = "-";
-        clearEntities();
+        resetOutput();
         return;
       }
 
       try {
         const space = Space.getSpaceByLocation(
-          { lat: state.lat, lng: state.lng, alt: state.alt },
+          {
+            lat: state.lat,
+            lng: state.lng,
+            alt: state.alt
+          },
           state.z
         );
 
-        updateOutput(space, state);
-        draw3DVoxel(space, state);
+        const verticalInfo = updateOutput(space, state);
         msgEl.textContent = "";
+
+        try {
+          drawVoxel(space, state, verticalInfo);
+        } catch (mapDrawError) {
+          console.warn("3D voxel draw error:", mapDrawError);
+        }
       } catch (error) {
         msgEl.textContent = `${messages[currentLang].calcError} ${
           error.message || ""
         }`.trim();
+        resetOutput();
       }
     }
 
-    function validateAndCalculate(debounce = true) {
+    function scheduleCalculate() {
       window.clearTimeout(debounceTimer);
-
-      if (!debounce) {
+      debounceTimer = window.setTimeout(() => {
         calculate();
+      }, DEBOUNCE_MS);
+    }
+
+    function clearVoxel() {
+      if (!viewer) return;
+
+      if (voxelEntity) viewer.entities.remove(voxelEntity);
+      if (centerEntity) viewer.entities.remove(centerEntity);
+
+      voxelEntity = null;
+      centerEntity = null;
+    }
+
+    function extractOuterRing(space) {
+      if (typeof space.toGeoJSON !== "function") return null;
+
+      const geojson = space.toGeoJSON();
+      const geom = geojson.type === "Feature" ? geojson.geometry : geojson;
+
+      if (!geom || !geom.coordinates) return null;
+
+      if (geom.type === "Polygon") return geom.coordinates[0];
+
+      if (
+        geom.type === "MultiPolygon" &&
+        geom.coordinates &&
+        geom.coordinates[0] &&
+        geom.coordinates[0][0]
+      ) {
+        return geom.coordinates[0][0];
+      }
+
+      return null;
+    }
+
+    function drawVoxel(space, input, verticalInfo) {
+      if (!mapEnabled || !viewer || !window.Cesium) return;
+
+      const Cesium = window.Cesium;
+      const ring = extractOuterRing(space);
+
+      if (!ring || ring.length < 4) return;
+
+      clearVoxel();
+
+      const positions = [];
+
+      ring.forEach((coord, index) => {
+        const isClosingPoint =
+          index === ring.length - 1 &&
+          coord[0] === ring[0][0] &&
+          coord[1] === ring[0][1];
+
+        if (!isClosingPoint) {
+          positions.push(
+            Cesium.Cartesian3.fromDegrees(
+              coord[0],
+              coord[1],
+              verticalInfo.floor
+            )
+          );
+        }
+      });
+
+      if (positions.length < 3) return;
+
+      voxelEntity = viewer.entities.add({
+        name: "Spatial ID voxel",
+        polygon: {
+          hierarchy: new Cesium.PolygonHierarchy(positions),
+          height: verticalInfo.floor,
+          extrudedHeight: verticalInfo.ceiling,
+          material: Cesium.Color.ROYALBLUE.withAlpha(0.28),
+          outline: true,
+          outlineColor: Cesium.Color.ROYALBLUE
+        }
+      });
+
+      centerEntity = viewer.entities.add({
+        name: "Input point",
+        position: Cesium.Cartesian3.fromDegrees(
+          verticalInfo.center.lng,
+          verticalInfo.center.lat,
+          verticalInfo.ceiling
+        ),
+        point: {
+          pixelSize: 8,
+          color: Cesium.Color.DEEPSKYBLUE,
+          outlineColor: Cesium.Color.WHITE,
+          outlineWidth: 2,
+          disableDepthTestDistance: Number.POSITIVE_INFINITY
+        }
+      });
+
+      if (!isCameraInitialized) {
+        viewer.camera.flyTo({
+          destination: Cesium.Cartesian3.fromDegrees(
+            verticalInfo.center.lng,
+            verticalInfo.center.lat,
+            verticalInfo.ceiling + Math.max(250, verticalInfo.height * 18)
+          ),
+          orientation: {
+            heading: Cesium.Math.toRadians(0),
+            pitch: Cesium.Math.toRadians(-55),
+            roll: 0
+          },
+          duration: 0.8
+        });
+
+        isCameraInitialized = true;
+      }
+    }
+
+    function init3DMap() {
+      if (!window.Cesium || !$("map3d")) {
+        if (msgEl) msgEl.textContent = messages[currentLang].mapMissing;
         return;
       }
 
-      debounceTimer = window.setTimeout(calculate, DEBOUNCE_MS);
+      const Cesium = window.Cesium;
+
+      try {
+        viewer = new Cesium.Viewer("map3d", {
+          animation: false,
+          baseLayerPicker: false,
+          fullscreenButton: false,
+          geocoder: false,
+          homeButton: false,
+          infoBox: false,
+          sceneModePicker: false,
+          selectionIndicator: false,
+          timeline: false,
+          navigationHelpButton: false,
+          terrainProvider: new Cesium.EllipsoidTerrainProvider(),
+          imageryProvider: new Cesium.UrlTemplateImageryProvider({
+            url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+            maximumLevel: 19,
+            credit: "© OpenStreetMap contributors"
+          })
+        });
+
+        viewer.scene.globe.depthTestAgainstTerrain = false;
+        viewer.scene.screenSpaceCameraController.enableCollisionDetection = false;
+
+        viewer.camera.setView({
+          destination: Cesium.Cartesian3.fromDegrees(
+            DEFAULT_LNG,
+            DEFAULT_LAT,
+            1200
+          ),
+          orientation: {
+            heading: Cesium.Math.toRadians(0),
+            pitch: Cesium.Math.toRadians(-55),
+            roll: 0
+          }
+        });
+
+        const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+
+        handler.setInputAction(click => {
+          applyMapClick(click.position);
+        }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+        mapEnabled = true;
+      } catch (error) {
+        mapEnabled = false;
+        viewer = null;
+
+        if (msgEl) {
+          msgEl.textContent = `${messages[currentLang].mapMissing} ${
+            error.message || ""
+          }`.trim();
+        }
+      }
     }
 
     function applyMapClick(position) {
-      const cartesian = viewer.scene.pickPosition(position);
+      if (!mapEnabled || !viewer || !window.Cesium) return;
 
-      let pickedCartesian = cartesian;
+      const Cesium = window.Cesium;
+      const cartesian = viewer.camera.pickEllipsoid(
+        position,
+        viewer.scene.globe.ellipsoid
+      );
 
-      if (!Cesium.defined(pickedCartesian)) {
-        const ray = viewer.camera.getPickRay(position);
-        pickedCartesian = viewer.scene.globe.pick(ray, viewer.scene);
-      }
+      if (!cartesian) return;
 
-      if (!Cesium.defined(pickedCartesian)) return;
-
-      const cartographic = Cesium.Cartographic.fromCartesian(pickedCartesian);
+      const cartographic = Cesium.Cartographic.fromCartesian(cartesian);
       const lat = Cesium.Math.toDegrees(cartographic.latitude);
       const lng = Cesium.Math.toDegrees(cartographic.longitude);
 
@@ -398,36 +518,45 @@
 
       latEl.value = formatCoord(lat);
       lngEl.value = formatCoord(lng);
-      validateAndCalculate(false);
+
+      calculate();
     }
 
-    form.addEventListener("submit", e => {
-      e.preventDefault();
-      validateAndCalculate(false);
-    });
+    if (form) {
+      form.addEventListener("submit", e => {
+        e.preventDefault();
+        calculate();
+      });
+    }
 
     [latEl, lngEl, hEl, zEl].forEach(el => {
-      el.addEventListener("input", () => validateAndCalculate(true));
-      el.addEventListener("change", () => validateAndCalculate(false));
+      el.addEventListener("input", scheduleCalculate);
+      el.addEventListener("change", calculate);
     });
 
     [latEl, lngEl].forEach(el => {
       el.addEventListener("blur", () => {
         const value = Number(el.value);
-        if (Number.isFinite(value)) el.value = formatCoord(value);
+
+        if (Number.isFinite(value)) {
+          el.value = formatCoord(value);
+          calculate();
+        }
       });
     });
 
-    langSelect.addEventListener("change", e => {
-      applyTranslations(e.target.value);
-    });
-
-    const clickHandler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
-    clickHandler.setInputAction(click => {
-      applyMapClick(click.position);
-    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+    if (langSelect) {
+      langSelect.addEventListener("change", e => {
+        applyTranslations(e.target.value);
+        calculate();
+      });
+    }
 
     applyTranslations("ja");
+    init3DMap();
+
+    // 初期表示時にも出力を表示する
+    calculate();
   }
 
   document.addEventListener("DOMContentLoaded", start);
