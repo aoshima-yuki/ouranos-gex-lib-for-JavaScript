@@ -10,12 +10,329 @@
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     crossorigin=""
   />
+  <style>
+    :root {
+      --border: #d9e2ef;
+      --muted: #5f6f89;
+      --bg: #f6f8fb;
+      --panel: #ffffff;
+      --primary: #2457d6;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: #1f2937;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .container {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 20px 0 16px;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 14px;
+    }
+
+    .page-title-wrap h1 {
+      margin: 0 0 6px;
+      font-size: clamp(1.6rem, 3vw, 2.2rem);
+      line-height: 1.2;
+    }
+
+    .page-description {
+      max-width: 840px;
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .lang-switch {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      white-space: nowrap;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .lang-switch select,
+    input {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      color: #1f2937;
+    }
+
+    .layout-grid {
+      display: grid;
+      grid-template-columns: 360px minmax(0, 1fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .side-grid,
+    .main-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 6px 18px rgba(17, 24, 39, 0.05);
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: baseline;
+      margin-bottom: 10px;
+    }
+
+    .panel-header h2,
+    .panel-header h3 {
+      margin: 0;
+      font-size: 1.05rem;
+    }
+
+    .panel-help {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.86rem;
+      line-height: 1.5;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .field {
+      display: grid;
+      gap: 5px;
+    }
+
+    .field-label {
+      font-weight: 600;
+      font-size: 0.88rem;
+    }
+
+    input {
+      width: 100%;
+      min-height: 40px;
+      padding: 8px 10px;
+      font-size: 0.96rem;
+    }
+
+    input:invalid {
+      border-color: #dc2626;
+    }
+
+    .actions {
+      grid-column: 1 / -1;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-top: 2px;
+    }
+
+    .btn-primary {
+      min-height: 40px;
+      padding: 8px 16px;
+      border: 0;
+      border-radius: 8px;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .message {
+      min-height: 1.5em;
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.86rem;
+      line-height: 1.5;
+    }
+
+    .result-card {
+      display: grid;
+      gap: 8px;
+    }
+
+    .result-row {
+      display: grid;
+      grid-template-columns: 90px minmax(0, 1fr);
+      gap: 8px;
+      align-items: start;
+      padding: 8px 0;
+      border-bottom: 1px solid #edf1f7;
+    }
+
+    .result-row:last-child {
+      border-bottom: 0;
+    }
+
+    .result-label {
+      color: var(--muted);
+      font-size: 0.86rem;
+      font-weight: 700;
+    }
+
+    .result-value {
+      overflow-wrap: anywhere;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 0.95rem;
+    }
+
+    .hint-panel p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 0.92rem;
+    }
+
+    .map-visual-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 240px;
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    .map {
+      height: min(52vh, 520px);
+      min-height: 360px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .voxel-card {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 10px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      background: #fbfdff;
+    }
+
+    .voxel-card h3 {
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .voxel-scene {
+      display: grid;
+      place-items: center;
+      min-height: 190px;
+      perspective: 520px;
+    }
+
+    .voxel-cube {
+      width: 98px;
+      height: 98px;
+      position: relative;
+      transform-style: preserve-3d;
+      transform: rotateX(-24deg) rotateY(34deg);
+    }
+
+    .voxel-face {
+      position: absolute;
+      width: 98px;
+      height: 98px;
+      border: 2px solid rgba(36, 87, 214, 0.75);
+      background: rgba(36, 87, 214, 0.13);
+    }
+
+    .voxel-front { transform: translateZ(49px); }
+    .voxel-back { transform: rotateY(180deg) translateZ(49px); }
+    .voxel-right { transform: rotateY(90deg) translateZ(49px); }
+    .voxel-left { transform: rotateY(-90deg) translateZ(49px); }
+    .voxel-top { transform: rotateX(90deg) translateZ(49px); }
+    .voxel-bottom { transform: rotateX(-90deg) translateZ(49px); }
+
+    .voxel-axis {
+      position: absolute;
+      right: -42px;
+      top: -16px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .voxel-caption,
+    #voxel-info {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 0.86rem;
+    }
+
+    .link-list {
+      margin: 0;
+      padding-left: 1.2em;
+      line-height: 1.7;
+    }
+
+    .footer-note {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 0.84rem;
+      text-align: center;
+    }
+
+    @media (max-width: 920px) {
+      .layout-grid,
+      .map-visual-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .map {
+        height: 420px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .container {
+        width: min(100% - 20px, 1180px);
+        padding-top: 12px;
+      }
+
+      .page-header,
+      .actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 <body>
   <main class="container">
     <header class="page-header">
       <div class="page-title-wrap">
         <h1 data-i18n="pageTitle">空間ID試行環境</h1>
+        <p class="page-description" data-i18n="pageDesc">
+          緯度・経度・標高・ズームレベルから空間ID（z/f/x/y）を算出し、地図上の範囲と3Dイメージを確認できます。緯度・経度は10進度で入力してください。地図をクリックして座標を入力することもできます。
+        </p>
       </div>
 
       <div class="lang-switch">
@@ -27,128 +344,173 @@
       </div>
     </header>
 
-    <section class="panel input-panel">
-      <div class="panel-header">
-        <h2 data-i18n="inputTitle">入力</h2>
-        <p data-i18n="inputDesc">
-          緯度・経度・標高・ズームレベルを入力します。
-        </p>
+    <div class="layout-grid">
+      <div class="side-grid">
+        <section class="panel input-panel">
+          <div class="panel-header">
+            <h2 data-i18n="inputTitle">入力</h2>
+          </div>
+
+          <form id="calc-form" class="form-grid" novalidate>
+            <label class="field">
+              <span class="field-label" data-i18n="latLabel">緯度（10進度）</span>
+              <input
+                type="number"
+                id="lat"
+                step="0.0000001"
+                min="-85.05112878"
+                max="85.05112878"
+                value="35.7300467"
+                inputmode="decimal"
+                required
+              />
+            </label>
+
+            <label class="field">
+              <span class="field-label" data-i18n="lngLabel">経度（10進度）</span>
+              <input
+                type="number"
+                id="lng"
+                step="0.0000001"
+                min="-180"
+                max="180"
+                value="139.7474538"
+                inputmode="decimal"
+                required
+              />
+            </label>
+
+            <label class="field">
+              <span class="field-label" data-i18n="altLabel">標高（m）</span>
+              <input
+                type="number"
+                id="h"
+                step="0.01"
+                min="-33554432"
+                max="33554432"
+                value="0"
+                inputmode="decimal"
+              />
+            </label>
+
+            <label class="field">
+              <span class="field-label" data-i18n="zoomLabel">ズームレベル</span>
+              <input
+                type="number"
+                id="z"
+                step="1"
+                min="0"
+                max="25"
+                value="20"
+                inputmode="numeric"
+                required
+              />
+            </label>
+
+            <div class="actions">
+              <button type="submit" class="btn-primary" data-i18n="calcButton">再計算</button>
+              <p id="msg" class="message" aria-live="polite"></p>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel result-panel">
+          <div class="panel-header">
+            <h2 data-i18n="resultTitle">出力</h2>
+          </div>
+
+          <div class="result-card">
+            <div class="result-row">
+              <div class="result-label" data-i18n="resultLabel">空間ID</div>
+              <code id="zfxy" class="result-value">-</code>
+            </div>
+            <div class="result-row">
+              <div class="result-label" data-i18n="centerLabel">中心座標</div>
+              <code id="center" class="result-value">-</code>
+            </div>
+            <div class="result-row">
+              <div class="result-label" data-i18n="floorLabel">下端標高</div>
+              <code id="floor" class="result-value">-</code>
+            </div>
+            <div class="result-row">
+              <div class="result-label" data-i18n="ceilingLabel">上端標高</div>
+              <code id="ceiling" class="result-value">-</code>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel hint-panel">
+          <div class="panel-header">
+            <h2 data-i18n="hintTitle">操作メモ</h2>
+          </div>
+          <p data-i18n="hintText">
+            手入力または地図クリックで座標を指定できます。入力値は自動で検証・計算されます。
+          </p>
+        </section>
       </div>
 
-      <form id="calc-form" class="form-grid" novalidate>
-        <label class="field">
-          <span class="field-label" data-i18n="latLabel">緯度（度）</span>
-          <input
-            type="number"
-            id="lat"
-            step="any"
-            min="-85.05112878"
-            max="85.05112878"
-            value="35.73004672351672"
-            inputmode="decimal"
-            required
-          />
-        </label>
+      <div class="main-grid">
+        <section class="panel map-panel">
+          <div class="panel-header">
+            <h2 data-i18n="mapTitle">地図・3D表示</h2>
+            <p class="panel-help" data-i18n="mapHelp">
+              地図をクリックすると緯度・経度欄に反映されます。
+            </p>
+          </div>
 
-        <label class="field">
-          <span class="field-label" data-i18n="lngLabel">経度（度）</span>
-          <input
-            type="number"
-            id="lng"
-            step="any"
-            min="-180"
-            max="180"
-            value="139.7474538411047"
-            inputmode="decimal"
-            required
-          />
-        </label>
+          <div class="map-visual-grid">
+            <div id="map" class="map" aria-label="map"></div>
 
-        <label class="field">
-          <span class="field-label" data-i18n="altLabel">標高（m）</span>
-          <input
-            type="number"
-            id="h"
-            step="any"
-            min="-33554432"
-            max="33554432"
-            placeholder="0"
-            inputmode="decimal"
-          />
-        </label>
+            <aside class="voxel-card" aria-label="3D voxel preview">
+              <h3 data-i18n="voxel3dTitle">3Dイメージ</h3>
+              <div class="voxel-scene" aria-hidden="true">
+                <div class="voxel-cube">
+                  <div class="voxel-face voxel-front"></div>
+                  <div class="voxel-face voxel-back"></div>
+                  <div class="voxel-face voxel-right"></div>
+                  <div class="voxel-face voxel-left"></div>
+                  <div class="voxel-face voxel-top"></div>
+                  <div class="voxel-face voxel-bottom"></div>
+                  <div class="voxel-axis">F</div>
+                </div>
+              </div>
+              <p id="voxel-info">-</p>
+              <p class="voxel-caption" data-i18n="voxel3dCaption">
+                F方向（高さ方向）の違いを直感的に確認するための模式表示です。
+              </p>
+            </aside>
+          </div>
+        </section>
 
-        <label class="field">
-          <span class="field-label" data-i18n="zoomLabel">ズームレベル</span>
-          <input
-            type="number"
-            id="z"
-            step="1"
-            min="0"
-            max="35"
-            value="20"
-            inputmode="numeric"
-            required
-          />
-        </label>
-
-        <div class="actions">
-          <button type="submit" class="btn-primary" data-i18n="calcButton">計算</button>
-          <p id="msg" class="message" aria-live="polite"></p>
-        </div>
-      </form>
-    </section>
-
-    <section class="panel result-panel">
-      <div class="panel-header">
-        <h2 data-i18n="resultTitle">出力</h2>
-        <p data-i18n="resultDesc">
-          算出された空間ID（z/f/x/y）を表示します。
-        </p>
+        <section class="panel links-panel">
+          <div class="panel-header">
+            <h2 data-i18n="linksTitle">関連情報</h2>
+          </div>
+          <ul class="link-list">
+            <li>
+              <a
+                href="https://www.ipa.go.jp/digital/architecture/guidelines/4dspatio-temporal-guideline.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                data-i18n="guidelineLink"
+              >
+                4次元時空間情報利活用のための空間IDガイドライン
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://github.com/ODS-IS-STID"
+                target="_blank"
+                rel="noopener noreferrer"
+                data-i18n="repoLink"
+              >
+                Open Data Spaces 4次元時空間ID 関連リポジトリ
+              </a>
+            </li>
+          </ul>
+        </section>
       </div>
-
-      <div class="result-card">
-        <div class="result-label" data-i18n="resultLabel">空間ID</div>
-        <code id="zfxy" class="result-value">-</code>
-      </div>
-    </section>
-
-    <section class="panel map-panel">
-      <div class="panel-header">
-        <h2 data-i18n="mapTitle">地図</h2>
-        <p data-i18n="mapDesc">
-          空間ボクセルの2D範囲を表示します。
-        </p>
-      </div>
-      <div id="map" class="map" aria-label="map"></div>
-    </section>
-
-    <section class="panel links-panel">
-      <div class="panel-header">
-        <h2 data-i18n="linksTitle">関連情報</h2>
-      </div>
-      <ul class="link-list">
-        <li>
-          <a
-            href="https://www.ipa.go.jp/digital/architecture/guidelines/4dspatio-temporal-guideline.html"
-            target="_blank"
-            rel="noopener noreferrer"
-            data-i18n="guidelineLink"
-          >
-            4次元時空間情報利活用のための空間IDガイドライン
-          </a>
-        </li>
-        <li>
-          <a
-            href="https://github.com/ODS-IS-STID"
-            target="_blank"
-            rel="noopener noreferrer"
-            data-i18n="repoLink"
-          >
-            Open Data Spaces 4次元時空間ID 関連リポジトリ
-          </a>
-        </li>
-      </ul>
-    </section>
+    </div>
 
     <footer class="footer-note" data-i18n="footerNote">
       本画面は試行環境です。表示結果は利用者の責任においてご確認ください。
