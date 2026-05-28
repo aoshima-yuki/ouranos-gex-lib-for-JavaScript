@@ -40,7 +40,7 @@
     ja: {
       pageTitle: "空間ID試行環境",
       pageDesc:
-        "緯度・経度・標高・ズームレベルから空間ID（z/f/x/y）を算出できます。地図をクリックして座標を入力することもできます。",
+        "緯度・経度・標高・ズームレベルから空間ID（z/f/x/y）を算出できます。\n地図をクリックして座標を入力することもできます。",
       inputTitle: "入力",
       latLabel: "緯度（10進度）",
       lngLabel: "経度（10進度）",
@@ -59,7 +59,7 @@
     en: {
       pageTitle: "Spatial ID Demo",
       pageDesc:
-        "Calculate a Spatial ID (z/f/x/y) from latitude, longitude, altitude, and zoom level. You can also click the map to fill in the coordinates.",
+        "Calculate a Spatial ID (z/f/x/y) from latitude, longitude, altitude, and zoom level.\nYou can also click the map to fill in the coordinates.",
       inputTitle: "Input",
       latLabel: "Latitude (decimal degrees)",
       lngLabel: "Longitude (decimal degrees)",
