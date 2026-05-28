@@ -170,22 +170,26 @@
 
     .result-row {
       display: grid;
-      grid-template-columns: 90px minmax(0, 1fr);
-      gap: 8px;
+      grid-template-columns: 80px minmax(0, 1fr);
+      gap: 10px;
       align-items: start;
-      padding: 8px 0;
+      padding: 10px 0;
     }
 
     .result-label {
       color: var(--muted);
-      font-size: 0.86rem;
+      font-size: 0.9rem;
       font-weight: 700;
+      padding-top: 4px;
     }
 
     .result-value {
       overflow-wrap: anywhere;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-      font-size: 0.95rem;
+      font-size: 1.35rem;
+      font-weight: 700;
+      line-height: 1.5;
+      color: #111827;
     }
 
     .map-panel {
@@ -240,6 +244,14 @@
 
       .form-grid {
         grid-template-columns: 1fr;
+      }
+
+      .result-row {
+        grid-template-columns: 1fr;
+      }
+
+      .result-value {
+        font-size: 1.2rem;
       }
     }
   </style>
