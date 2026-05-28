@@ -48,9 +48,6 @@
       zoomLabel: "ズームレベル",
       resultTitle: "出力",
       resultLabel: "空間ID",
-      centerLabel: "中心座標",
-      floorLabel: "下端標高",
-      ceilingLabel: "上端標高",
       mapTitle: "地図",
       mapHelp: "地図をクリックすると緯度・経度欄に反映されます。",
       linksTitle: "関連情報",
@@ -70,9 +67,6 @@
       zoomLabel: "Zoom level",
       resultTitle: "Output",
       resultLabel: "Spatial ID",
-      centerLabel: "Center",
-      floorLabel: "Floor altitude",
-      ceilingLabel: "Ceiling altitude",
       mapTitle: "Map",
       mapHelp: "Click the map to update latitude and longitude.",
       linksTitle: "Related links",
@@ -109,9 +103,6 @@
     const hEl = $("h");
     const zEl = $("z");
     const zfxyEl = $("zfxy");
-    const centerEl = $("center");
-    const floorEl = $("floor");
-    const ceilingEl = $("ceiling");
     const langSelect = $("lang-select");
 
     let currentLang = "ja";
@@ -144,10 +135,6 @@
 
     function formatCoord(value) {
       return Number(value).toFixed(DECIMAL_DIGITS);
-    }
-
-    function formatMeter(value) {
-      return `${Number(value).toFixed(2)} m`;
     }
 
     function toNumber(el) {
@@ -215,26 +202,6 @@
       return null;
     }
 
-    function getTileHeight(space, fallbackZ) {
-      const tile = getTile(space);
-      const z = tile && Number.isInteger(tile.z) ? tile.z : fallbackZ;
-      return Math.pow(2, 25 - z);
-    }
-
-    function getFloorAltitude(space, fallbackAlt, fallbackZ) {
-      if (typeof space.alt === "number") return space.alt;
-      if (typeof space.floor === "number") return space.floor;
-
-      const tile = getTile(space);
-
-      if (tile && Number.isFinite(tile.f) && Number.isFinite(tile.z)) {
-        return tile.f * Math.pow(2, 25 - tile.z);
-      }
-
-      const height = Math.pow(2, 25 - fallbackZ);
-      return Math.floor(fallbackAlt / height) * height;
-    }
-
     function getZfxyString(space) {
       if (typeof space.zfxyStr === "string") {
         return space.zfxyStr.replace(/^\//, "");
@@ -264,23 +231,12 @@
       };
     }
 
-    function updateOutput(space, input) {
-      const center = getCenter(space, input);
-      const floor = getFloorAltitude(space, input.alt, input.z);
-      const height = getTileHeight(space, input.z);
-      const ceiling = floor + height;
-
+    function updateOutput(space) {
       zfxyEl.textContent = getZfxyString(space);
-      centerEl.textContent = `${formatCoord(center.lat)}, ${formatCoord(center.lng)}`;
-      floorEl.textContent = formatMeter(floor);
-      ceilingEl.textContent = formatMeter(ceiling);
     }
 
     function resetOutput() {
       zfxyEl.textContent = "-";
-      centerEl.textContent = "-";
-      floorEl.textContent = "-";
-      ceilingEl.textContent = "-";
       clearDrawings();
     }
 
@@ -337,7 +293,7 @@
           state.z
         );
 
-        updateOutput(space, state);
+        updateOutput(space);
         draw(space, state);
         msgEl.textContent = "";
       } catch (error) {
