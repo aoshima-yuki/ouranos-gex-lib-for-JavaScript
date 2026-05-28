@@ -4,16 +4,20 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>空間ID試行環境</title>
-  <link rel="stylesheet" href="https://unpkg.com/cesium@1.119.0/Build/Cesium/Widgets/widgets.css" />
+  <link rel="stylesheet" href="style.css" />
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    crossorigin=""
+  />
+
   <style>
     :root {
+      --border: #d9e2ef;
+      --muted: #5f6f89;
       --bg: #f6f8fb;
       --panel: #ffffff;
-      --border: #d9e2ef;
-      --text: #1f2937;
-      --muted: #5f6f89;
       --primary: #2457d6;
-      --danger: #dc2626;
     }
 
     * {
@@ -23,14 +27,14 @@
     body {
       margin: 0;
       background: var(--bg);
-      color: var(--text);
+      color: #1f2937;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
     .container {
       width: min(1180px, calc(100% - 32px));
       margin: 0 auto;
-      padding: 18px 0 14px;
+      padding: 20px 0 16px;
     }
 
     .page-header {
@@ -38,7 +42,7 @@
       justify-content: space-between;
       gap: 16px;
       align-items: flex-start;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
     }
 
     .page-title-wrap h1 {
@@ -51,8 +55,7 @@
       max-width: 840px;
       margin: 0;
       color: var(--muted);
-      line-height: 1.6;
-      font-size: 0.96rem;
+      line-height: 1.65;
     }
 
     .lang-switch {
@@ -64,25 +67,25 @@
       font-size: 0.9rem;
     }
 
-    select,
+    .lang-switch select,
     input {
       border: 1px solid var(--border);
       border-radius: 8px;
       background: #fff;
-      color: var(--text);
+      color: #1f2937;
     }
 
     .layout-grid {
       display: grid;
-      grid-template-columns: 350px minmax(0, 1fr);
+      grid-template-columns: 360px minmax(0, 1fr);
       gap: 14px;
-      align-items: stretch;
+      align-items: start;
     }
 
-    .side-grid {
+    .side-grid,
+    .main-grid {
       display: grid;
       gap: 14px;
-      align-content: start;
     }
 
     .panel {
@@ -106,6 +109,13 @@
       font-size: 1.05rem;
     }
 
+    .panel-help {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.86rem;
+      line-height: 1.5;
+    }
+
     .form-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -122,8 +132,7 @@
       font-size: 0.88rem;
     }
 
-    input,
-    select {
+    input {
       width: 100%;
       min-height: 40px;
       padding: 8px 10px;
@@ -131,21 +140,24 @@
     }
 
     input:invalid {
-      border-color: var(--danger);
+      border-color: #dc2626;
+    }
+
+    .message-wrap {
+      grid-column: 1 / -1;
+      min-height: 1.5em;
     }
 
     .message {
-      grid-column: 1 / -1;
-      min-height: 1.5em;
       margin: 0;
-      color: var(--danger);
+      color: var(--muted);
       font-size: 0.86rem;
       line-height: 1.5;
     }
 
     .result-card {
       display: grid;
-      gap: 0;
+      gap: 8px;
     }
 
     .result-row {
@@ -173,26 +185,12 @@
       font-size: 0.95rem;
     }
 
-    .map-panel {
-      min-height: 640px;
-      display: grid;
-      grid-template-rows: auto 1fr;
-    }
-
-    .map-help {
-      margin: 0;
-      color: var(--muted);
-      font-size: 0.86rem;
-      line-height: 1.5;
-    }
-
-    .map3d {
-      width: 100%;
-      min-height: 560px;
+    .map {
+      height: min(62vh, 620px);
+      min-height: 420px;
       border: 1px solid var(--border);
       border-radius: 12px;
       overflow: hidden;
-      background: #eaf0f8;
     }
 
     .link-list {
@@ -208,17 +206,13 @@
       text-align: center;
     }
 
-    @media (max-width: 960px) {
+    @media (max-width: 920px) {
       .layout-grid {
         grid-template-columns: 1fr;
       }
 
-      .map-panel {
-        min-height: 520px;
-      }
-
-      .map3d {
-        min-height: 460px;
+      .map {
+        height: 420px;
       }
     }
 
@@ -239,6 +233,7 @@
     }
   </style>
 </head>
+
 <body>
   <main class="container">
     <header class="page-header">
@@ -321,7 +316,9 @@
               />
             </label>
 
-            <p id="msg" class="message" aria-live="polite"></p>
+            <div class="message-wrap">
+              <p id="msg" class="message" aria-live="polite"></p>
+            </div>
           </form>
         </section>
 
@@ -335,25 +332,42 @@
               <div class="result-label" data-i18n="resultLabel">空間ID</div>
               <code id="zfxy" class="result-value">-</code>
             </div>
+
             <div class="result-row">
               <div class="result-label" data-i18n="centerLabel">中心座標</div>
               <code id="center" class="result-value">-</code>
             </div>
+
             <div class="result-row">
               <div class="result-label" data-i18n="floorLabel">下端標高</div>
               <code id="floor" class="result-value">-</code>
             </div>
+
             <div class="result-row">
               <div class="result-label" data-i18n="ceilingLabel">上端標高</div>
               <code id="ceiling" class="result-value">-</code>
             </div>
           </div>
         </section>
+      </div>
+
+      <div class="main-grid">
+        <section class="panel map-panel">
+          <div class="panel-header">
+            <h2 data-i18n="mapTitle">地図</h2>
+            <p class="panel-help" data-i18n="mapHelp">
+              地図をクリックすると緯度・経度欄に反映されます。
+            </p>
+          </div>
+
+          <div id="map" class="map" aria-label="map"></div>
+        </section>
 
         <section class="panel links-panel">
           <div class="panel-header">
             <h2 data-i18n="linksTitle">関連情報</h2>
           </div>
+
           <ul class="link-list">
             <li>
               <a
@@ -378,14 +392,6 @@
           </ul>
         </section>
       </div>
-
-      <section class="panel map-panel">
-        <div class="panel-header">
-          <h2 data-i18n="mapTitle">3D地図</h2>
-          <p class="map-help" data-i18n="mapHelp">地図をクリックすると緯度・経度欄に反映されます。</p>
-        </div>
-        <div id="map3d" class="map3d" aria-label="3D map"></div>
-      </section>
     </div>
 
     <footer class="footer-note" data-i18n="footerNote">
@@ -394,7 +400,10 @@
   </main>
 
   <script src="./vendor/spatialid/index.js"></script>
-  <script src="https://unpkg.com/cesium@1.119.0/Build/Cesium/Cesium.js"></script>
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    crossorigin=""
+  ></script>
   <script src="./app.js"></script>
 </body>
 </html>
