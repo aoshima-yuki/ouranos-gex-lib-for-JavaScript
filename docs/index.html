@@ -139,8 +139,9 @@
       font-size: 0.96rem;
     }
 
-    input:invalid {
-      border-color: #dc2626;
+    input:invalid,
+    input:out-of-range {
+      border-color: var(--border);
     }
 
     .message-wrap {
@@ -166,11 +167,6 @@
       gap: 8px;
       align-items: start;
       padding: 8px 0;
-      border-bottom: 1px solid #edf1f7;
-    }
-
-    .result-row:last-child {
-      border-bottom: 0;
     }
 
     .result-label {
@@ -331,21 +327,6 @@
             <div class="result-row">
               <div class="result-label" data-i18n="resultLabel">空間ID</div>
               <code id="zfxy" class="result-value">-</code>
-            </div>
-
-            <div class="result-row">
-              <div class="result-label" data-i18n="centerLabel">中心座標</div>
-              <code id="center" class="result-value">-</code>
-            </div>
-
-            <div class="result-row">
-              <div class="result-label" data-i18n="floorLabel">下端標高</div>
-              <code id="floor" class="result-value">-</code>
-            </div>
-
-            <div class="result-row">
-              <div class="result-label" data-i18n="ceilingLabel">上端標高</div>
-              <code id="ceiling" class="result-value">-</code>
             </div>
           </div>
         </section>
